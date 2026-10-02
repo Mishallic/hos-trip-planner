@@ -52,6 +52,7 @@ choices. Code and tests cite them as D1, D2, ...
 | D13 | Pickup and drop-off each take 1 hour, on duty. |
 | D14 | On-duty work is still allowed after the 14-hour window or the 70-hour cycle runs out; only driving stops (guide p. 6, 9-10). |
 | D15 | When a break comes due and the next fuel stop would be due within the next hour of driving, the driver fuels then instead. The fuel stop counts as the break (D9), so there is one stop, not two. |
+| D16 | Just before a 10-hour rest or 34-hour restart, the driver fuels if the trip needs more fuel, the tank won't last the next full shift, fuelling now doesn't add a fuel stop to the rest of the trip, and the fuel stop it replaces would not have doubled as the next shift's 30-minute break (D9). It never adds a fuel stop or lengthens the trip. Fuel still comes at or before every 1,000 miles. |
 
 ## Run locally
 

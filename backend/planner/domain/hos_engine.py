@@ -146,18 +146,16 @@ class _Scheduler:
         match reason:
             case StopReason.CYCLE_LIMIT:
                 # 70 hours on duty: 34 consecutive hours off restart the cycle (guide p. 11, D11).
-                self._record(Activity.RESTART, self.policy.restart_min, reason=reason)
+                self._rest(Activity.RESTART, self.policy.restart_min, reason)
             case StopReason.DRIVING_LIMIT | StopReason.DUTY_WINDOW:
                 cycle_left_min = self.policy.cycle_limit_min - self.clocks.cycle_used_min
                 if cycle_left_min < self._cycle_needed_min():
                     # The cycle will run out before the last drive anyway, so restart
                     # now instead of resting 10 hours first. Same driving, 10 hours sooner.
-                    self._record(
-                        Activity.RESTART, self.policy.restart_min, reason=StopReason.CYCLE_LIMIT
-                    )
+                    self._rest(Activity.RESTART, self.policy.restart_min, StopReason.CYCLE_LIMIT)
                 else:
                     # 10 consecutive hours off before driving again (guide p. 6-7).
-                    self._record(Activity.REST, self.policy.daily_rest_min, reason=reason)
+                    self._rest(Activity.REST, self.policy.daily_rest_min, reason)
             case StopReason.BREAK_REQUIRED:
                 after_min, limit = self._driving_allowance(self.policy.break_min)
                 if after_min <= 0:
@@ -170,6 +168,42 @@ class _Scheduler:
                     # 8 hours of driving: 30 minutes off the wheel, off duty (guide p. 10, D5).
                     self._record(Activity.BREAK, self.policy.break_min, reason=reason)
 
+    def _rest(self, activity: Activity, minutes: int, reason: StopReason) -> None:
+        """A 10-hour rest or 34-hour restart, fuelling first when that saves a stop later."""
+        if self._should_fuel_before_rest():
+            self._record(Activity.FUEL, self.policy.fuel_stop_min, reason=StopReason.FUEL_INTERVAL)
+        self._record(activity, minutes, reason=reason)
+
+    def _should_fuel_before_rest(self) -> bool:
+        """D16: fuel now, while stopped anyway, instead of on the road after the rest.
+
+        Only when the trip needs more fuel, the tank will not last the next full
+        shift, fuelling now does not add a fuel stop to the rest of the trip, and the
+        fuel stop it replaces would not have doubled as the next shift's break.
+        """
+        if not self.policy.fuel_before_rest or self.drive_left_min == 0:
+            return False
+        stops_left = self._fuel_stops_left()
+        if stops_left == 0:
+            return False
+        tank_left_miles = self.policy.fuel_interval_miles - self.clocks.miles_since_fuel
+        miles_left = self.trip.total_miles - self.mile
+        next_shift_miles = min(miles_left, self.policy.max_driving_min * self.miles_per_min)
+        if tank_left_miles >= next_shift_miles:
+            return False
+        if 1 + self._fuel_stops_left(miles_since_fuel=0.0) > stops_left:
+            return False
+        # A fuel stop on the road can also be the next shift's break (D9). When it
+        # would split that shift into two stretches of at most 8 hours, fuelling now
+        # would cost a separate break later, so wait.
+        shift_min = min(self.drive_left_min, self.policy.max_driving_min)
+        break_after_min = self.policy.break_after_driving_min
+        fuel_in_min = self._minutes_until_fuel()
+        return not (
+            shift_min > break_after_min
+            and shift_min - break_after_min <= fuel_in_min <= break_after_min
+        )
+
     def _minutes_until_fuel(self) -> int:
         """Whole minutes of driving left before the next fuel stop, at the current speed.
 
@@ -180,15 +214,15 @@ class _Scheduler:
             return 10**9
         return math.floor(tank_left_miles / self.miles_per_min + EPSILON)
 
-    def _fuel_stops_left(self) -> int:
+    def _fuel_stops_left(self, miles_since_fuel: float | None = None) -> int:
         """Fuel stops still needed: one each time the tank runs out with miles to go."""
         interval = self.policy.fuel_interval_miles
         if math.isinf(interval):
             return 0
+        if miles_since_fuel is None:
+            miles_since_fuel = self.clocks.miles_since_fuel
         miles_left = self.trip.total_miles - self.mile
-        return max(
-            0, math.ceil((self.clocks.miles_since_fuel + miles_left) / interval - EPSILON) - 1
-        )
+        return max(0, math.ceil((miles_since_fuel + miles_left) / interval - EPSILON) - 1)
 
     def _cycle_needed_min(self) -> int:
         """A lower bound on the on-duty minutes still needed before the last drive ends.

@@ -35,6 +35,7 @@ class HOSPolicy:
     fuel_interval_miles: float = 1000.0  # D7; math.inf turns fuel stops off
     fuel_stop_min: int = 30  # D7
     fuel_merge_window_min: int = 60  # D15: fuel due this soon is taken at the break instead
+    fuel_before_rest: bool = True  # D16: fuel before a rest when the tank won't last the next shift
     max_avg_speed_mph: float = 55.0  # D8
     rest_status: DutyStatus = DutyStatus.SLEEPER_BERTH  # D5
     break_status: DutyStatus = DutyStatus.OFF_DUTY  # D5

@@ -13,6 +13,10 @@ from planner.domain.policy import DEFAULT_POLICY
 
 from .hos_helpers import H, first, plan, timeline
 
+# The D7 and D15 tests switch off fuelling before a rest (D16), which would move
+# their fuel stops to the rest before them. TestFuelBeforeRest covers D16.
+NO_EARLY_FUEL = replace(DEFAULT_POLICY, fuel_before_rest=False)
+
 
 def count(events, activity: str) -> int:
     return sum(e.activity.value == activity for e in events)
@@ -139,7 +143,7 @@ class TestFuel:
     def test_fuel_stop_comes_at_or_before_a_thousand_miles(self):
         # 1,100 miles. The first day ends at 605 miles, so the tank lasts 430 more
         # minutes (394.2 miles at 55 mph, rounded down to whole minutes).
-        events = plan(10 * H, 10 * H)
+        events = plan(10 * H, 10 * H, policy=NO_EARLY_FUEL)
 
         fuel = first(events, "fuel")
         assert count(events, "fuel") == 1
@@ -151,7 +155,7 @@ class TestFuel:
     def test_fuel_stop_counts_as_the_break(self):
         # D9: after the rest, 430 min of driving, fuel, then 230 min more. That is
         # 11 h of driving with no break, because the fuel stop reset the 8-hour count.
-        events = plan(10 * H, 12 * H)
+        events = plan(10 * H, 12 * H, policy=NO_EARLY_FUEL)
 
         after_rest = events[events.index(first(events, "rest")) :]
         assert [e.activity.value for e in after_rest] == [
@@ -166,7 +170,7 @@ class TestFuel:
     def test_break_and_fuel_due_together_make_one_stop(self):
         # D15: on day 2 the break comes due at 962.5 miles, 40 min before fuel would.
         # The driver fuels then, and that stop is also the break.
-        events = plan(2 * H, 17 * H + 30, policy=replace(DEFAULT_POLICY, pickup_min=4 * H))
+        events = plan(2 * H, 17 * H + 30, policy=replace(NO_EARLY_FUEL, pickup_min=4 * H))
 
         fuel = first(events, "fuel")
         assert count(events, "break") == 0
@@ -192,6 +196,55 @@ class TestFuel:
         assert len(fuel_miles) == 4
         gaps = [b - a for a, b in zip([0.0, *fuel_miles], fuel_miles, strict=False)]
         assert all(gap <= 1000 for gap in gaps)
+
+
+class TestFuelBeforeRest:
+    """D16: fuel just before a rest when the tank won't last the next shift."""
+
+    def test_two_thousand_mile_trip_no_longer_fuels_near_the_end(self):
+        # Without D16 the stops fall at ~1,000 and ~2,000 miles, the second only
+        # 20 miles from the drop-off. With it, the second moves to just before the
+        # last rest at 1,815 miles, where 185 miles of fuel would not reach the end.
+        # The first stays on the road: at 999 miles it is also day 2's break (D9).
+        events = plan(4 * H, 32 * H + 44)  # 220 + 1,800 miles
+        without_d16 = plan(4 * H, 32 * H + 44, policy=NO_EARLY_FUEL)
+
+        fuels = [e for e in events if e.activity is Activity.FUEL]
+        assert [f.start_mile for f in fuels] == pytest.approx([999.17, 1815], abs=0.01)
+        assert events[events.index(fuels[1]) + 1].activity is Activity.REST
+        assert events[-1].end_mile - fuels[-1].start_mile > 200
+        assert len(fuels) == count(without_d16, "fuel")
+        assert events[-1].end_min == without_d16[-1].end_min
+
+    def test_no_early_fuel_when_the_tank_covers_the_next_shift(self):
+        # 1,158 miles, so one fuel stop either way. A 7 h pickup ends day 1 at 357.5
+        # miles. The 642.5 miles left in the tank cover a full 605-mile shift, so the
+        # driver rests without fuelling and fuels before the second rest instead.
+        events = plan(1 * H, 20 * H + 3, policy=replace(DEFAULT_POLICY, pickup_min=7 * H))
+
+        rests = [e for e in events if e.activity is Activity.REST]
+        assert rests[0].start_mile == pytest.approx(357.5)
+        assert events[events.index(rests[0]) - 1].activity is Activity.DRIVING
+        assert events[events.index(rests[1]) - 1].activity is Activity.FUEL
+        assert count(events, "fuel") == 1
+
+    def test_no_early_fuel_when_it_would_add_a_stop(self):
+        # 2,600 miles. Fuelling before every rest (605, 1,210, 1,815) would need 3
+        # stops; the trip needs only 2. At the second rest, fuelling would add one,
+        # so the driver waits and fuels on the road.
+        events = plan(0, 47 * H + 16)  # 2,599.7 miles
+
+        assert count(events, "fuel") == 2
+
+    @pytest.mark.parametrize("to_pickup_h", [0, 3, 9, 15])
+    @pytest.mark.parametrize("to_dropoff_h", [10, 20, 37, 48, 75])
+    @pytest.mark.parametrize("cycle_used_h", [0, 40])
+    def test_never_more_fuel_stops_or_a_longer_trip(self, to_pickup_h, to_dropoff_h, cycle_used_h):
+        args = (to_pickup_h * H, to_dropoff_h * H, cycle_used_h * H)
+        with_d16, without_d16 = plan(*args), plan(*args, policy=NO_EARLY_FUEL)
+
+        assert count(with_d16, "fuel") <= count(without_d16, "fuel")
+        assert with_d16[-1].end_min <= without_d16[-1].end_min
 
 
 class TestEverythingTogether:
