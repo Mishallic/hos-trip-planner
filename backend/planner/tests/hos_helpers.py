@@ -23,6 +23,7 @@ def plan(
     events = plan_trip(trip, policy)
     assert_well_formed(events, trip)
     assert_driving_limits_hold(events, policy)
+    assert_break_rule_holds(events, policy)
     return events
 
 
@@ -71,3 +72,24 @@ def assert_driving_limits_hold(events: list[Event], policy: HOSPolicy) -> None:
             assert event.end_min <= window_start + policy.duty_window_min, (
                 f"driving after the 14th hour at {event}"
             )
+
+
+def assert_break_rule_holds(events: list[Event], policy: HOSPolicy) -> None:
+    """Check the 8-hour rule without trusting the engine (guide p. 10, D9).
+
+    Driving adds up across stops until the driver spends `break_min` consecutive
+    minutes not driving, in any status.
+    """
+    driving = 0
+    not_driving = 0
+    for event in events:
+        if event.status is DutyStatus.DRIVING:
+            driving += event.duration_min
+            not_driving = 0
+            assert driving <= policy.break_after_driving_min, (
+                f"over 8 hours of driving without a break at {event}"
+            )
+        else:
+            not_driving += event.duration_min
+            if not_driving >= policy.break_min:
+                driving = 0

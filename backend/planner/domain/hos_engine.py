@@ -31,6 +31,8 @@ class _Clocks:
     driving_min: int = 0  # driving since the last 10-hour rest (11-hour limit)
     window_start_min: int | None = None  # first on-duty minute since that rest (14-hour window)
     off_streak_min: int = 0  # consecutive off-duty or sleeper minutes up to now
+    driving_since_break_min: int = 0  # driving since the last qualifying break (8-hour rule)
+    not_driving_streak_min: int = 0  # consecutive non-driving minutes of any status up to now
 
 
 class _Scheduler:
@@ -77,6 +79,11 @@ class _Scheduler:
         limits = [
             (policy.max_driving_min - clocks.driving_min, StopReason.DRIVING_LIMIT),  # guide p. 6
             (policy.duty_window_min - window_used_min, StopReason.DUTY_WINDOW),  # guide p. 6
+            # Listed after the rest limits: on a tie the rest is taken, and it covers the break.
+            (
+                policy.break_after_driving_min - clocks.driving_since_break_min,
+                StopReason.BREAK_REQUIRED,
+            ),  # guide p. 10
         ]
         return min(limits, key=lambda limit: limit[0])
 
@@ -86,6 +93,9 @@ class _Scheduler:
             case StopReason.DRIVING_LIMIT | StopReason.DUTY_WINDOW:
                 # 10 consecutive hours off before driving again (guide p. 6-7).
                 self._record(Activity.REST, self.policy.daily_rest_min, reason=reason)
+            case StopReason.BREAK_REQUIRED:
+                # 8 hours of driving: 30 minutes off the wheel, logged off duty (guide p. 10, D5).
+                self._record(Activity.BREAK, self.policy.break_min, reason=reason)
 
     def _record(
         self,
@@ -113,6 +123,17 @@ class _Scheduler:
 
     def _update_clocks(self, status: DutyStatus, minutes: int) -> None:
         clocks = self.clocks
+
+        # 8-hour rule: driving counts cumulatively until 30 consecutive minutes of
+        # any non-driving status, on duty included (guide p. 10, D9).
+        if status is DutyStatus.DRIVING:
+            clocks.driving_since_break_min += minutes
+            clocks.not_driving_streak_min = 0
+        else:
+            clocks.not_driving_streak_min += minutes
+            if clocks.not_driving_streak_min >= self.policy.break_min:
+                clocks.driving_since_break_min = 0
+
         if status in OFF_STATUSES:
             clocks.off_streak_min += minutes
             if clocks.off_streak_min >= self.policy.daily_rest_min:
