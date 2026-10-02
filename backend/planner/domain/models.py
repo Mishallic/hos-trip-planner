@@ -31,6 +31,13 @@ class Activity(StrEnum):
     RESTART = "restart"  # 34-hour cycle restart
 
 
+class StopReason(StrEnum):
+    """The limit that forced a stop. Shown next to rests and breaks."""
+
+    DRIVING_LIMIT = "driving_limit"  # 11 hours of driving, guide p. 6
+    DUTY_WINDOW = "duty_window"  # 14 hours since coming on duty, guide p. 6
+
+
 @dataclass(frozen=True, slots=True)
 class Leg:
     """One routed leg: current location to pickup, or pickup to drop-off."""
@@ -72,6 +79,7 @@ class Event:
     end_min: int
     start_mile: float
     end_mile: float
+    reason: StopReason | None = None  # set on stops that a limit forced
 
     def __post_init__(self) -> None:
         if self.end_min <= self.start_min:
@@ -81,6 +89,8 @@ class Event:
         if self.status is DutyStatus.DRIVING:
             if self.end_mile < self.start_mile:
                 raise ValueError("driving cannot move backwards along the route")
+            if self.reason is not None:
+                raise ValueError("driving is never a forced stop")
         elif self.end_mile != self.start_mile:
             raise ValueError("the truck does not move outside driving events")
 
