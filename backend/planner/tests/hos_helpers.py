@@ -1,7 +1,7 @@
 """Builders and checks shared by the HOS engine tests."""
 
 from planner.domain.hos_engine import plan_trip
-from planner.domain.models import DutyStatus, Event, Leg, TripInput
+from planner.domain.models import Activity, DutyStatus, Event, Leg, TripInput
 from planner.domain.policy import DEFAULT_POLICY, HOUR, HOSPolicy
 
 H = HOUR
@@ -25,6 +25,8 @@ def plan(
     assert_driving_limits_hold(events, policy)
     assert_break_rule_holds(events, policy)
     assert_cycle_rule_holds(events, policy, cycle_used_min)
+    assert_pre_trip_rule_holds(events, policy)
+    assert_fuel_rule_holds(events, policy)
     return events
 
 
@@ -115,3 +117,46 @@ def assert_cycle_rule_holds(events: list[Event], policy: HOSPolicy, cycle_used_m
         cycle += event.duration_min
         if event.status is DutyStatus.DRIVING:
             assert cycle <= policy.cycle_limit_min, f"driving past 70 hours on duty at {event}"
+
+
+def duty_periods(events: list[Event], policy: HOSPolicy) -> list[list[Event]]:
+    """Split the timeline at every off-duty stretch of at least `daily_rest_min`.
+
+    Off-duty events are dropped, so each period lists only its on-duty work.
+    """
+    periods: list[list[Event]] = [[]]
+    off_streak = 0
+    for event in events:
+        if event.status in OFF:
+            off_streak += event.duration_min
+            continue
+        if off_streak >= policy.daily_rest_min and periods[-1]:
+            periods.append([])
+        off_streak = 0
+        periods[-1].append(event)
+    return periods
+
+
+def assert_pre_trip_rule_holds(events: list[Event], policy: HOSPolicy) -> None:
+    """D4: one pre-trip per duty period that drives, before its first drive, and no
+    pre-trip in a period that does not drive."""
+    if not policy.pre_trip_min:
+        return
+    for period in duty_periods(events, policy):
+        kinds = [e.activity for e in period]
+        drives = Activity.DRIVING in kinds
+        assert kinds.count(Activity.PRE_TRIP) == (1 if drives else 0), f"pre-trips in {kinds}"
+        if drives:
+            assert kinds.index(Activity.PRE_TRIP) < kinds.index(Activity.DRIVING), (
+                f"pre-trip after the first drive in {kinds}"
+            )
+
+
+def assert_fuel_rule_holds(events: list[Event], policy: HOSPolicy) -> None:
+    """D7: never more than `fuel_interval_miles` driven between fuel stops."""
+    since_fuel = 0.0
+    for event in events:
+        if event.activity is Activity.FUEL:
+            since_fuel = 0.0
+        since_fuel += event.end_mile - event.start_mile
+        assert since_fuel <= policy.fuel_interval_miles + 1e-6, f"tank ran dry at {event}"

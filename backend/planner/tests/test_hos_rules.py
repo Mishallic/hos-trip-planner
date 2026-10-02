@@ -4,17 +4,30 @@
 (April 2022). "DN" is a planning decision listed in the README.
 """
 
+import math
+from dataclasses import replace
+
 import pytest
 
 from planner.domain.hos_engine import plan_trip
 from planner.domain.models import Activity, DutyStatus, StopReason, TripInput
 from planner.domain.policy import DEFAULT_POLICY, HOSPolicy
 
-from .hos_helpers import H, first, leg, plan, timeline
+from . import hos_helpers
+from .hos_helpers import H, first, leg, timeline
+
+# These tests switch off the two planning assumptions that add stops of their own,
+# the pre-trip (D4) and fuel (D7), so each timeline shows the FMCSA rule it cites.
+# test_hos_planning.py covers both with the real defaults.
+LIMITS_ONLY = HOSPolicy(pre_trip_min=0, fuel_interval_miles=math.inf)
 
 # A long pickup (detention at the shipper) makes the 14-hour window bind before
 # the 11-hour limit. Only the assumption changes; every FMCSA limit stays real.
-LONG_PICKUP = HOSPolicy(pickup_min=4 * H)
+LONG_PICKUP = replace(LIMITS_ONLY, pickup_min=4 * H)
+
+
+def plan(to_pickup_min, to_dropoff_min, cycle_used_min=0, policy=LIMITS_ONLY):
+    return hos_helpers.plan(to_pickup_min, to_dropoff_min, cycle_used_min, policy)
 
 
 def activities(events) -> list[str]:
@@ -165,7 +178,7 @@ class TestFourteenHourWindow:
     """Guide p. 6: no driving after the 14th hour since coming on duty."""
 
     def test_window_counts_from_the_first_on_duty_minute_not_the_first_drive(self):
-        # Pickup is the first work here. Chunk 8 adds the pre-trip and re-tests this.
+        # Pickup is the first work here. test_hos_planning.py repeats this with the pre-trip.
         events = plan(0, 15 * H, policy=LONG_PICKUP)
 
         assert timeline(events)[:5] == [
@@ -239,7 +252,7 @@ class TestWindowAndDrivingLimitTogether:
 
     def test_both_at_the_same_minute_reports_the_driving_limit(self):
         # 2.5 h pickup + 8 h driving + 30 min break + 3 h driving: 11 h driven at 14 h.
-        events = plan(0, 12 * H, policy=HOSPolicy(pickup_min=2 * H + 30))
+        events = plan(0, 12 * H, policy=replace(LIMITS_ONLY, pickup_min=2 * H + 30))
 
         rest = first(events, "rest")
         assert rest.start_min == 14 * H
@@ -272,7 +285,7 @@ class TestThirtyMinuteBreak:
 
     def test_driving_counts_cumulatively_across_short_stops(self):
         # A 20-minute pickup is too short to count, so 5 h + 5 h still needs a break.
-        events = plan(5 * H, 5 * H, policy=HOSPolicy(pickup_min=20))
+        events = plan(5 * H, 5 * H, policy=replace(LIMITS_ONLY, pickup_min=20))
 
         assert timeline(events) == [
             ("driving", 0, 5 * H),
@@ -359,7 +372,7 @@ class TestSeventyHourCycle:
         ]
 
     def test_starting_at_seventy_restarts_before_the_first_drive(self):
-        # Chunk 8 adds the pre-trip; the restart must still come before it.
+        # test_hos_planning.py checks the restart also comes before the pre-trip.
         events = plan(2 * H, 1 * H, cycle_used_min=70 * H)
 
         assert timeline(events)[:2] == [

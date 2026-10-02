@@ -25,13 +25,16 @@ class HOSPolicy:
     restart_min: int = 34 * HOUR  # consecutive off duty that resets the cycle, guide p. 11
 
     # Planning assumptions.
-    # D4: on duty at the start of each duty period (trip start, after every 10-hour
-    # rest or 34-hour restart), before the first drive. Per duty period, not per day.
+    # D4: on duty at the start of each duty period that drives (trip start, after every
+    # 10-hour rest or 34-hour restart), before loading if the period starts at the
+    # pickup. Per duty period, not per day.
+    # 0 turns it off, which lets tests look at the FMCSA limits on their own.
     pre_trip_min: int = 30
     pickup_min: int = 60  # D13
     dropoff_min: int = 60  # D13
-    fuel_interval_miles: float = 1000.0  # D7
+    fuel_interval_miles: float = 1000.0  # D7; math.inf turns fuel stops off
     fuel_stop_min: int = 30  # D7
+    fuel_merge_window_min: int = 60  # D15: fuel due this soon is taken at the break instead
     max_avg_speed_mph: float = 55.0  # D8
     rest_status: DutyStatus = DutyStatus.SLEEPER_BERTH  # D5
     break_status: DutyStatus = DutyStatus.OFF_DUTY  # D5

@@ -38,6 +38,7 @@ class StopReason(StrEnum):
     DUTY_WINDOW = "duty_window"  # 14 hours since coming on duty, guide p. 6
     BREAK_REQUIRED = "break_required"  # 8 hours of driving without a break, guide p. 10
     CYCLE_LIMIT = "cycle_limit"  # 70 hours on duty in the cycle, guide p. 10-11
+    FUEL_INTERVAL = "fuel_interval"  # 1,000 miles since the last fuel, D7
 
 
 @dataclass(frozen=True, slots=True)

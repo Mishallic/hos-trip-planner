@@ -5,7 +5,7 @@
 - [x] deploy skeleton to vercel (health check)
 - [x] hos: policy + models
 - [x] hos: 11h / 14h / 30min break / 70h + 34h restart
-- [ ] hos: fuel, pickup/dropoff, pre-trip
+- [x] hos: fuel, pickup/dropoff, pre-trip
 - [ ] property test + fix what it finds
 - [ ] log builder (daily totals = 24h)
 - [ ] osrm + photon, restrict to US/CA/MX

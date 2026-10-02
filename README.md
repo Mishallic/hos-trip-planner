@@ -40,7 +40,7 @@ choices. Code and tests cite them as D1, D2, ...
 | D1 | The trip has a start date and time, defaulting to now. Log sheets run midnight to midnight. |
 | D2 | The whole trip uses one time zone: the home terminal's, which defaults to the current location's (guide p. 16). |
 | D3 | Cycle hours used apply to the whole trip; there is no day-by-day history. Reaching 70 hours triggers a 34-hour restart. |
-| D4 | A 30-minute pre-trip inspection, on duty, starts each duty period: at the trip start and after every 10-hour rest or 34-hour restart, before the first drive. It is per duty period, not per calendar day. No separate post-trip inspection is planned. |
+| D4 | A 30-minute pre-trip inspection, on duty, starts each duty period that includes driving: at the trip start and after every 10-hour rest or 34-hour restart. When the period starts at the pickup, the inspection comes before loading. It is per duty period, not per calendar day. No separate post-trip inspection is planned. |
 | D5 | The 10-hour rest is logged in the sleeper berth. The 30-minute break is logged off duty. |
 | D6 | The split sleeper-berth provision (guide p. 7-9) is not used. |
 | D7 | A 30-minute fuel stop, on duty, comes at or before every 1,000 miles. The tank is full at the start. |
@@ -51,6 +51,7 @@ choices. Code and tests cite them as D1, D2, ...
 | D12 | The recap is approximate: it adds this trip's on-duty time to the cycle hours entered, because earlier days are unknown. |
 | D13 | Pickup and drop-off each take 1 hour, on duty. |
 | D14 | On-duty work is still allowed after the 14-hour window or the 70-hour cycle runs out; only driving stops (guide p. 6, 9-10). |
+| D15 | When a break comes due and the next fuel stop would be due within the next hour of driving, the driver fuels then instead. The fuel stop counts as the break (D9), so there is one stop, not two. |
 
 ## Run locally
 
