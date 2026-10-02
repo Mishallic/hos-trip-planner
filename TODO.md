@@ -4,7 +4,7 @@
 - [x] scaffold api + web
 - [x] deploy skeleton to vercel (health check)
 - [x] hos: policy + models
-- [ ] hos: 11h / 14h / 30min break / 70h + 34h restart
+- [x] hos: 11h / 14h / 30min break / 70h + 34h restart
 - [ ] hos: fuel, pickup/dropoff, pre-trip
 - [ ] property test + fix what it finds
 - [ ] log builder (daily totals = 24h)

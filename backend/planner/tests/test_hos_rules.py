@@ -323,6 +323,159 @@ class TestThirtyMinuteBreak:
         assert rest.reason is StopReason.DRIVING_LIMIT
 
 
+class TestSeventyHourCycle:
+    """Guide p. 10-11: no driving after 70 hours on duty; 34 hours off restart the count."""
+
+    def test_cycle_hours_used_count_from_minute_zero(self):
+        # D3: 65 h used, so only 5 h remain before the first restart.
+        events = plan(6 * H, 1 * H, cycle_used_min=65 * H)
+
+        assert timeline(events) == [
+            ("driving", 0, 5 * H),
+            ("restart", 5 * H, 39 * H),
+            ("driving", 39 * H, 40 * H),
+            ("pickup", 40 * H, 41 * H),
+            ("driving", 41 * H, 42 * H),
+            ("dropoff", 42 * H, 43 * H),
+        ]
+
+    def test_on_duty_time_counts_not_just_driving(self):
+        # 66 h + 1 h driving + 1 h pickup + 2 h driving = 70 h at 4 h. Counting only
+        # driving, the restart would wait until 5 h.
+        events = plan(1 * H, 5 * H, cycle_used_min=66 * H)
+
+        assert first(events, "restart").start_min == 4 * H
+
+    def test_cycle_running_out_during_pickup_lets_the_pickup_finish(self):
+        # D14: 68.5 h + 1 h driving reaches 70 h halfway through the pickup.
+        events = plan(1 * H, 3 * H, cycle_used_min=68 * H + 30)
+
+        assert timeline(events) == [
+            ("driving", 0, 1 * H),
+            ("pickup", 1 * H, 2 * H),  # finishes at 70.5 h on duty
+            ("restart", 2 * H, 36 * H),  # before the next drive
+            ("driving", 36 * H, 39 * H),
+            ("dropoff", 39 * H, 40 * H),
+        ]
+
+    def test_starting_at_seventy_restarts_before_the_first_drive(self):
+        # Chunk 8 adds the pre-trip; the restart must still come before it.
+        events = plan(2 * H, 1 * H, cycle_used_min=70 * H)
+
+        assert timeline(events)[:2] == [
+            ("restart", 0, 34 * H),
+            ("driving", 34 * H, 36 * H),
+        ]
+
+    def test_starting_at_seventy_at_the_pickup_does_the_pickup_first(self):
+        # D14: the pickup is on-duty work, so it happens before the restart.
+        events = plan(0, 2 * H, cycle_used_min=70 * H)
+
+        assert timeline(events) == [
+            ("pickup", 0, 1 * H),
+            ("restart", 1 * H, 35 * H),
+            ("driving", 35 * H, 37 * H),
+            ("dropoff", 37 * H, 38 * H),
+        ]
+
+    def test_restart_is_34_hours_off_duty_because_of_the_cycle(self):  # D11
+        restart = first(plan(6 * H, 1 * H, cycle_used_min=65 * H), "restart")
+
+        assert restart.duration_min == 34 * H
+        assert restart.status is DutyStatus.OFF_DUTY
+        assert restart.reason is StopReason.CYCLE_LIMIT
+
+    def test_restart_resets_every_clock(self):
+        # Before it: 10 h driven, 2 h since the break, 70 h used. After it the driver
+        # gets a fresh cycle, 8 h before the next break and 11 h in a new window.
+        events = plan(20 * H, 1 * H, cycle_used_min=60 * H)
+
+        assert timeline(events) == [
+            ("driving", 0, 8 * H),
+            ("break", 8 * H, 8 * H + 30),
+            ("driving", 8 * H + 30, 10 * H + 30),
+            ("restart", 10 * H + 30, 44 * H + 30),
+            ("driving", 44 * H + 30, 52 * H + 30),
+            ("break", 52 * H + 30, 53 * H),
+            ("driving", 53 * H, 55 * H),
+            ("pickup", 55 * H, 56 * H),
+            ("driving", 56 * H, 57 * H),  # 11 h driven since the restart, exactly the limit
+            ("dropoff", 57 * H, 58 * H),
+        ]
+
+    def test_restart_wins_when_the_cycle_and_a_rest_run_out_together(self):
+        # 59 h + 11 h of driving: the 11-hour limit and the cycle both run out at 11.5 h.
+        events = plan(12 * H, 1 * H, cycle_used_min=59 * H)
+
+        assert Activity.REST not in {e.activity for e in events}
+        restart = first(events, "restart")
+        assert restart.start_min == 11 * H + 30
+        assert restart.reason is StopReason.CYCLE_LIMIT
+
+    def test_no_restart_when_the_cycle_has_room(self):
+        events = plan(10 * H, 10 * H, cycle_used_min=0)
+
+        assert Activity.RESTART not in {e.activity for e in events}
+
+
+class TestRestartInsteadOfRest:
+    """When a 10-hour rest comes due but the cycle cannot cover the rest of the trip,
+    the 34-hour restart is taken in its place: the same driving, 10 hours sooner."""
+
+    def test_no_rest_then_short_drive_then_restart(self):
+        # 58 h + 11 h of driving = 69 h when the 11-hour limit hits. 1 h of cycle left,
+        # 3 h of work still to come (1 h drive, pickup, 1 h drive), so restart now.
+        # Before this rule: rest 11.5-21.5, drive 1 h, pickup, restart, ... ending 10 h later.
+        events = plan(12 * H, 1 * H, cycle_used_min=58 * H)
+
+        assert Activity.REST not in {e.activity for e in events}
+        assert timeline(events) == [
+            ("driving", 0, 8 * H),
+            ("break", 8 * H, 8 * H + 30),
+            ("driving", 8 * H + 30, 11 * H + 30),
+            ("restart", 11 * H + 30, 45 * H + 30),
+            ("driving", 45 * H + 30, 46 * H + 30),
+            ("pickup", 46 * H + 30, 47 * H + 30),
+            ("driving", 47 * H + 30, 48 * H + 30),
+            ("dropoff", 48 * H + 30, 49 * H + 30),
+        ]
+        assert first(events, "restart").reason is StopReason.CYCLE_LIMIT
+
+    def test_cycle_with_room_still_takes_a_normal_rest(self):
+        # 50 h + 11 h = 61 h: 9 h left covers the 3 h of work still to come.
+        events = plan(12 * H, 1 * H, cycle_used_min=50 * H)
+
+        assert Activity.RESTART not in {e.activity for e in events}
+        assert timeline(events)[3:] == [
+            ("rest", 11 * H + 30, 21 * H + 30),
+            ("driving", 21 * H + 30, 22 * H + 30),
+            ("pickup", 22 * H + 30, 23 * H + 30),
+            ("driving", 23 * H + 30, 24 * H + 30),
+            ("dropoff", 24 * H + 30, 25 * H + 30),
+        ]
+
+    def test_dropoff_does_not_need_room_in_the_cycle(self):
+        # 56 h + 11 h = 67 h: 3 h left is exactly the work before the last drive ends.
+        # The drop-off then runs to 71 h, which is allowed (D14), so a rest is enough.
+        events = plan(12 * H, 1 * H, cycle_used_min=56 * H)
+
+        assert Activity.RESTART not in {e.activity for e in events}
+        assert first(events, "rest").start_min == 11 * H + 30
+
+    def test_restart_replaces_only_the_rest_that_needs_it(self):
+        # 50 h used and 26 h of work to come: the first rest becomes a restart. After it
+        # the cycle has room, so the next rest is a normal one.
+        events = plan(25 * H, 1 * H, cycle_used_min=50 * H)
+
+        stops = [(e.activity.value, e.reason, e.start_min) for e in events if e.reason]
+        assert stops == [
+            ("break", StopReason.BREAK_REQUIRED, 8 * H),
+            ("restart", StopReason.CYCLE_LIMIT, 11 * H + 30),  # 61 h used, 16 h to come
+            ("break", StopReason.BREAK_REQUIRED, 53 * H + 30),
+            ("rest", StopReason.DRIVING_LIMIT, 57 * H),  # 11 h used, plenty of room
+        ]
+
+
 class TestCycleInput:
     """Guide p. 10-11: the cycle limit is 70 hours, so more cannot have been used."""
 

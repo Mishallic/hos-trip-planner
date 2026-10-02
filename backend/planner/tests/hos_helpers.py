@@ -24,6 +24,7 @@ def plan(
     assert_well_formed(events, trip)
     assert_driving_limits_hold(events, policy)
     assert_break_rule_holds(events, policy)
+    assert_cycle_rule_holds(events, policy, cycle_used_min)
     return events
 
 
@@ -93,3 +94,24 @@ def assert_break_rule_holds(events: list[Event], policy: HOSPolicy) -> None:
             not_driving += event.duration_min
             if not_driving >= policy.break_min:
                 driving = 0
+
+
+def assert_cycle_rule_holds(events: list[Event], policy: HOSPolicy, cycle_used_min: int) -> None:
+    """Check the 70-hour rule without trusting the engine (guide p. 10-11, D3, D14).
+
+    Every on-duty and driving minute counts, starting from the hours already used.
+    On-duty work past 70 is allowed; driving is not. `restart_min` consecutive
+    minutes off duty or in the sleeper berth reset the count.
+    """
+    cycle = cycle_used_min
+    off_streak = 0
+    for event in events:
+        if event.status in OFF:
+            off_streak += event.duration_min
+            if off_streak >= policy.restart_min:
+                cycle = 0
+            continue
+        off_streak = 0
+        cycle += event.duration_min
+        if event.status is DutyStatus.DRIVING:
+            assert cycle <= policy.cycle_limit_min, f"driving past 70 hours on duty at {event}"

@@ -25,7 +25,8 @@ def plan_trip(trip: TripInput, policy: HOSPolicy = DEFAULT_POLICY) -> list[Event
 class _Clocks:
     """What the rules need to know about the driver's recent past.
 
-    The driver starts rested (D10), so every clock starts at zero.
+    The driver starts rested (D10), so every clock starts at zero except the
+    cycle, which starts at the hours already used (D3).
     """
 
     driving_min: int = 0  # driving since the last 10-hour rest (11-hour limit)
@@ -33,22 +34,26 @@ class _Clocks:
     off_streak_min: int = 0  # consecutive off-duty or sleeper minutes up to now
     driving_since_break_min: int = 0  # driving since the last qualifying break (8-hour rule)
     not_driving_streak_min: int = 0  # consecutive non-driving minutes of any status up to now
+    cycle_used_min: int = 0  # on duty in the current 70-hour cycle, seeded from the input (D3)
 
 
 class _Scheduler:
     def __init__(self, trip: TripInput, policy: HOSPolicy) -> None:
         self.trip = trip
         self.policy = policy
-        self.clocks = _Clocks()
+        self.clocks = _Clocks(cycle_used_min=trip.cycle_used_min)
         self.now = 0
         self.mile = 0.0
         self.events: list[Event] = []
+        self.drive_left_min = trip.to_pickup.drive_min + trip.to_dropoff.drive_min
+        self.pickup_done = False
 
     def run(self) -> list[Event]:
         # On-duty work is allowed even when the clocks forbid driving (D14),
         # so pickup and drop-off happen on arrival and any rest comes after.
         self._drive_leg(self.trip.to_pickup)
         self._record(Activity.PICKUP, self.policy.pickup_min)  # D13
+        self.pickup_done = True
         self._drive_leg(self.trip.to_dropoff)
         self._record(Activity.DROPOFF, self.policy.dropoff_min)  # D13
         return self.events
@@ -63,6 +68,7 @@ class _Scheduler:
                 continue
             step_min = min(leg.drive_min - driven_min, allowed_min)
             driven_min += step_min
+            self.drive_left_min -= step_min
             # Position from the leg start, so rounding never drifts across steps.
             end_mile = start_mile + leg.distance_miles * driven_min / leg.drive_min
             self._record(Activity.DRIVING, step_min, end_mile)
@@ -77,6 +83,8 @@ class _Scheduler:
             0 if clocks.window_start_min is None else self.now - clocks.window_start_min
         )
         limits = [
+            # Listed first: on a tie with a rest limit the restart is taken, and it covers both.
+            (policy.cycle_limit_min - clocks.cycle_used_min, StopReason.CYCLE_LIMIT),  # p. 10-11
             (policy.max_driving_min - clocks.driving_min, StopReason.DRIVING_LIMIT),  # guide p. 6
             (policy.duty_window_min - window_used_min, StopReason.DUTY_WINDOW),  # guide p. 6
             # Listed after the rest limits: on a tie the rest is taken, and it covers the break.
@@ -90,12 +98,34 @@ class _Scheduler:
     def _take_required_stop(self, reason: StopReason) -> None:
         """Insert the stop that lets driving continue."""
         match reason:
+            case StopReason.CYCLE_LIMIT:
+                # 70 hours on duty: 34 consecutive hours off restart the cycle (guide p. 11, D11).
+                self._record(Activity.RESTART, self.policy.restart_min, reason=reason)
             case StopReason.DRIVING_LIMIT | StopReason.DUTY_WINDOW:
-                # 10 consecutive hours off before driving again (guide p. 6-7).
-                self._record(Activity.REST, self.policy.daily_rest_min, reason=reason)
+                cycle_left_min = self.policy.cycle_limit_min - self.clocks.cycle_used_min
+                if cycle_left_min < self._cycle_needed_min():
+                    # The cycle will run out before the last drive anyway, so restart
+                    # now instead of resting 10 hours first. Same driving, 10 hours sooner.
+                    self._record(
+                        Activity.RESTART, self.policy.restart_min, reason=StopReason.CYCLE_LIMIT
+                    )
+                else:
+                    # 10 consecutive hours off before driving again (guide p. 6-7).
+                    self._record(Activity.REST, self.policy.daily_rest_min, reason=reason)
             case StopReason.BREAK_REQUIRED:
                 # 8 hours of driving: 30 minutes off the wheel, logged off duty (guide p. 10, D5).
                 self._record(Activity.BREAK, self.policy.break_min, reason=reason)
+
+    def _cycle_needed_min(self) -> int:
+        """A lower bound on the on-duty minutes still needed before the last drive ends.
+
+        Work after the last drive (the drop-off) is left out: on-duty work past 70
+        hours is allowed (D14), so it never needs room in the cycle.
+        """
+        needed_min = self.drive_left_min
+        if not self.pickup_done and self.trip.to_dropoff.drive_min > 0:
+            needed_min += self.policy.pickup_min
+        return needed_min
 
     def _record(
         self,
@@ -140,8 +170,12 @@ class _Scheduler:
                 # A full rest resets the 11-hour limit and the 14-hour window (guide p. 6-7).
                 clocks.driving_min = 0
                 clocks.window_start_min = None
+            if clocks.off_streak_min >= self.policy.restart_min:
+                clocks.cycle_used_min = 0  # the 34-hour restart (guide p. 11)
             return
 
+        # All on-duty time counts toward the cycle, not just driving (guide p. 10).
+        clocks.cycle_used_min += minutes
         clocks.off_streak_min = 0
         if clocks.window_start_min is None:
             # The window starts with any work, not with the first drive (guide p. 6).
