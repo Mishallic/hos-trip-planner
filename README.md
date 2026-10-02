@@ -36,4 +36,15 @@ npm install
 npm run dev
 ```
 
-The web app listens on http://localhost:5173.
+The web app listens on http://localhost:5173 and proxies `/api` to the local API.
+
+## Deploy
+
+Both apps deploy to Vercel as two projects from this repository.
+
+| Project | Root directory | Notes |
+|---|---|---|
+| `hos-trip-planner-api` | `backend` | Detected as Django. Set `DJANGO_SECRET_KEY`. Python version comes from `.python-version`. |
+| `hos-trip-planner-web` | `frontend` | Detected as Vite. `vercel.json` rewrites `/api/*` to the API project, so the browser only talks to one origin and no CORS is needed. |
+
+Check a deployment with `GET /api/health`, which returns `{"status": "ok", "python": "<version>"}`.
