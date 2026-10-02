@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.gzip.GZipMiddleware",
     "django.middleware.common.CommonMiddleware",
 ]
 
@@ -58,4 +59,17 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "UNAUTHENTICATED_USER": None,
+    "EXCEPTION_HANDLER": "planner.api.errors.exception_handler",
+    # Per client IP. On Vercel each instance counts on its own, so this is best effort.
+    "DEFAULT_THROTTLE_RATES": {"plan": "20/min", "places": "120/min"},
+}
+
+# Routes have no trailing slash; never redirect a POST to add one.
+APPEND_SLASH = False
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {"planner": {"handlers": ["console"], "level": "INFO"}},
 }

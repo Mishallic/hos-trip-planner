@@ -9,7 +9,7 @@
 - [x] property test + fix what it finds
 - [x] log builder (daily totals = 24h)
 - [x] osrm + photon, restrict to US/CA/MX
-- [ ] POST /api/trips/plan + error codes
+- [x] POST /api/trips/plan + error codes
 - [ ] api tests
 
 ## UI

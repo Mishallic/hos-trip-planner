@@ -7,6 +7,7 @@ from planner.domain.geometry import (
     decode_polyline,
     encode_polyline,
     haversine_miles,
+    simplify,
 )
 
 # The worked example from Google's polyline format documentation.
@@ -69,3 +70,31 @@ class TestRoutePath:
     def test_leg_without_points_is_rejected(self):
         with pytest.raises(ValueError):
             RoutePath([(10.0, [])])
+
+
+class TestSimplify:
+    def test_straight_line_keeps_only_its_ends(self):
+        line = [(0.0, x / 10) for x in range(11)]
+
+        assert simplify(line, 0.0001) == [(0.0, 0.0), (0.0, 1.0)]
+
+    def test_corners_are_kept(self):
+        line = [(0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.5, 1.0), (1.0, 1.0)]
+
+        assert simplify(line, 0.0001) == [(0.0, 0.0), (0.0, 1.0), (1.0, 1.0)]
+
+    def test_wiggles_below_the_tolerance_are_dropped(self):
+        line = [(0.0, 0.0), (0.00005, 0.5), (0.0, 1.0)]
+
+        assert simplify(line, 0.0001) == [(0.0, 0.0), (0.0, 1.0)]
+        assert simplify(line, 0.00001) == line
+
+    def test_short_lines_are_unchanged(self):
+        assert simplify([(1.0, 2.0)], 0.1) == [(1.0, 2.0)]
+
+    def test_a_line_deeper_than_the_recursion_limit_works(self):
+        # Every point of a zigzag must be kept: the worst case, deeper than Python's
+        # default recursion limit of 1,000. Kept small, since this case is quadratic.
+        zigzag = [(0.001 * (i % 2), i * 0.001) for i in range(1_200)]
+
+        assert len(simplify(zigzag, 0.0001)) == 1_200

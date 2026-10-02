@@ -105,3 +105,37 @@ def _along(points: list[LatLon], cumulative: list[float], miles: float) -> LatLo
     t = (miles - cumulative[i]) / span if span else 0.0
     (lat1, lon1), (lat2, lon2) = points[i], points[i + 1]
     return (lat1 + (lat2 - lat1) * t, lon1 + (lon2 - lon1) * t)
+
+
+def simplify(points: Sequence[LatLon], tolerance_deg: float) -> list[LatLon]:
+    """Drop points that change the line by less than `tolerance_deg` (Douglas-Peucker).
+
+    For drawing only: stop positions are worked out on the full geometry.
+    Iterative, so a long route cannot hit the recursion limit.
+    """
+    if len(points) < 3:
+        return list(points)
+    keep = [False] * len(points)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(points) - 1)]
+    while stack:
+        first, last = stack.pop()
+        farthest, max_distance = None, tolerance_deg
+        for i in range(first + 1, last):
+            distance = _distance_to_segment(points[i], points[first], points[last])
+            if distance > max_distance:
+                farthest, max_distance = i, distance
+        if farthest is not None:
+            keep[farthest] = True
+            stack.extend(((first, farthest), (farthest, last)))
+    return [p for p, kept in zip(points, keep, strict=True) if kept]
+
+
+def _distance_to_segment(p: LatLon, a: LatLon, b: LatLon) -> float:
+    """Planar distance in degrees from p to segment ab; fine at these small scales."""
+    (py, px), (ay, ax), (by, bx) = p, a, b
+    dx, dy = bx - ax, by - ay
+    if dx == dy == 0:
+        return math.hypot(px - ax, py - ay)
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+    return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
