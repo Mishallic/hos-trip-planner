@@ -2,8 +2,8 @@
 
 ## Core
 - [x] scaffold api + web
-- [ ] deploy skeleton to vercel (health check)
-- [ ] hos: policy + models
+- [x] deploy skeleton to vercel (health check)
+- [x] hos: policy + models
 - [ ] hos: 11h / 14h / 30min break / 70h + 34h restart
 - [ ] hos: fuel, pickup/dropoff, pre-trip
 - [ ] property test + fix what it finds
