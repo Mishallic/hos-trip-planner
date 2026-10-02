@@ -1,0 +1,453 @@
+{
+ "summary": {
+  "from": "Dallas, TX",
+  "pickup": "Fort Worth, TX",
+  "dropoff": "Houston, TX",
+  "total_miles": 294.0,
+  "driving": "5:27",
+  "driving_min": 327,
+  "elapsed": "7:57",
+  "elapsed_min": 477,
+  "start": "2026-10-05T07:00-05:00",
+  "pickup_arrival": "2026-10-05T08:11-05:00",
+  "dropoff_arrival": "2026-10-05T13:57-05:00",
+  "end": "2026-10-05T14:57-05:00",
+  "stop_counts": {
+   "pre_trip": 1,
+   "pickup": 1,
+   "dropoff": 1,
+   "fuel": 0,
+   "break": 0,
+   "rest": 0,
+   "restart": 0
+  },
+  "restart_needed": false,
+  "sheets": 1
+ },
+ "stops": [
+  {
+   "kind": "pre_trip",
+   "status": "on_duty",
+   "start": "2026-10-05T07:00-05:00",
+   "end": "2026-10-05T07:30-05:00",
+   "duration_min": 30,
+   "mile": 0.0,
+   "lat": 32.77595,
+   "lon": -96.79675,
+   "place": "Dallas, TX",
+   "reason": null,
+   "explanation": "Pre-trip inspection at the start of the duty period."
+  },
+  {
+   "kind": "pickup",
+   "status": "on_duty",
+   "start": "2026-10-05T08:11-05:00",
+   "end": "2026-10-05T09:11-05:00",
+   "duration_min": 60,
+   "mile": 32.3,
+   "lat": 32.753,
+   "lon": -97.33262,
+   "place": "Fort Worth, TX",
+   "reason": null,
+   "explanation": "Pickup: loading, 1:00 on duty."
+  },
+  {
+   "kind": "dropoff",
+   "status": "on_duty",
+   "start": "2026-10-05T13:57-05:00",
+   "end": "2026-10-05T14:57-05:00",
+   "duration_min": 60,
+   "mile": 294.0,
+   "lat": 29.75873,
+   "lon": -95.36786,
+   "place": "Houston, TX",
+   "reason": null,
+   "explanation": "Drop-off: unloading, 1:00 on duty. Trip complete."
+  }
+ ],
+ "timeline": [
+  {
+   "kind": "pre_trip",
+   "status": "on_duty",
+   "start": "2026-10-05T07:00-05:00",
+   "end": "2026-10-05T07:30-05:00",
+   "start_mile": 0.0,
+   "end_mile": 0.0,
+   "clocks": {
+    "driving_left_min": 660,
+    "window_left_min": 840,
+    "break_left_min": 480,
+    "cycle_left_min": 3720
+   }
+  },
+  {
+   "kind": "driving",
+   "status": "driving",
+   "start": "2026-10-05T07:30-05:00",
+   "end": "2026-10-05T08:11-05:00",
+   "start_mile": 0.0,
+   "end_mile": 32.3,
+   "clocks": {
+    "driving_left_min": 660,
+    "window_left_min": 810,
+    "break_left_min": 480,
+    "cycle_left_min": 3690
+   }
+  },
+  {
+   "kind": "pickup",
+   "status": "on_duty",
+   "start": "2026-10-05T08:11-05:00",
+   "end": "2026-10-05T09:11-05:00",
+   "start_mile": 32.3,
+   "end_mile": 32.3,
+   "clocks": {
+    "driving_left_min": 619,
+    "window_left_min": 769,
+    "break_left_min": 439,
+    "cycle_left_min": 3649
+   }
+  },
+  {
+   "kind": "driving",
+   "status": "driving",
+   "start": "2026-10-05T09:11-05:00",
+   "end": "2026-10-05T13:57-05:00",
+   "start_mile": 32.3,
+   "end_mile": 294.0,
+   "clocks": {
+    "driving_left_min": 619,
+    "window_left_min": 709,
+    "break_left_min": 480,
+    "cycle_left_min": 3589
+   }
+  },
+  {
+   "kind": "dropoff",
+   "status": "on_duty",
+   "start": "2026-10-05T13:57-05:00",
+   "end": "2026-10-05T14:57-05:00",
+   "start_mile": 294.0,
+   "end_mile": 294.0,
+   "clocks": {
+    "driving_left_min": 333,
+    "window_left_min": 423,
+    "break_left_min": 194,
+    "cycle_left_min": 3303
+   }
+  }
+ ],
+ "route": {
+  "polyline": "up`gEtrxmQg@uDzBk@xEbGrDvCfC|EjPnUt@~F`ChIJtCq@hEuJpVg@vGFvEfF|e@hGl`@xHriAnBvJpLtZnAhHb@rHGvHw@xHiMhq@_BlPcDrgD\\fOpDl`@b@zKv@~`Cl@dVrDf|@fPl`Bv@rUL`oAjBpStF~WzBpP`FflBIjUsD|oAO|dFkAvnFZls@IvbImA|mAdB|jFMlyD}CldAKrXnDtu@hKb`BlDpNl`@l~@fEhR~AvO`G`tBrB|^MdKqExN_B`M_AnCaD`GeIhJ}KlIiClDwC`JiCzNJ|EfAvFzE|LvCxBrNl_@{BrAuNk_@KiGuDoIqAuG?eKbDeOtAiDxBmCbMkJxk@qu@ji@kj@lDaBjE{@b|@mDvFaBfGoEnoAu~Bp{AekBxB_GdB{HlEy_@tCu]fCyIzD{GvGyFpLsDzeBAjEg@fDqAtFuF`BeE|@gHv@gjAu@yc@eDec@SqPz@uLpAeHrDmKjDaG`NwMnxAqmAjXgQj`B_`AdmG}}ExKcLzhA}}A|MqMxQkJ`_EsuAtKoGvFuErOaRhOwWrFeNrRka@jNec@lCaFfQ{OzL{UdFkOrFwKz}AkcC|MgQxOeWhFkM|h@_~AnHsO~d@om@~OcP~K{I~o@__@`CiChCwEhBsGx@wL?i}@k@cM_DyLeCgFcH{HsVcR{EwHoC_IcBiLIwHvAgv@hA{KtEeN`_@im@`_@uq@vHwKnhAasAnr@yeAt[sj@pSmf@~DaSv@cOmAkg@IklBf@oLhB}KlByGvSsc@pCiJf`@o}BzD}SrDoKhGcK~K{JlzCsfBbNgHfO_FfaBy\\`SeFln@}QnKoFzI{GrK_MtFwJz\\mt@hhBgbE|FmPfD_RzAsVkC}yBb@mh@lL_eChCuu@zFijA~ByYrEcy@vAmGjD_J`k@g|@`IqK~K{Jj|@uo@rSqSpJoNtHeO`FuMbE{NdEqVbCc^Daf@oAcdCuByR{D_PqQif@sHePyGuQm@uGR_FzFyUzg@cwArGySbUsl@fiAk_DdEwH|FqH|JcIrmBuz@re@yV`rAyg@bf@{SxR{GvToJzpBwv@nHkAjrG}a@pKoBh|@{b@doAus@ty@ag@jM{FvKkCd`Dqb@dM{@dNRfRzClRdIflAt}@dLrDlDZpGGjL{A`eCqd@jyAqa@~iFkaBzFqAtzAuLde@mHhHo@pHG|_@Nx~Bd[bL@pE}@zDcBzFiG~Xch@~FyGrOeNpKqQtzA_uCncBkzDbD}FnCgDxeBu`BpJ}LdFyMdn@s`CxBaGtFyIlyAavAt{@ww@hMaHncBet@dJoFrKmJn}@ikAbfAwjA~mAqsBlfBsuBdZ_ZdrC}jCxN}KvKaF`yCcp@hMsDfnA}b@jNyCl{Gom@nlF_OlJoAlhCyl@rRmF`IwDhcMuiHpF{BzUaGlzEmeA`IyB`J{DbLuHddFmmEnKgI`lFe{CvUcJreOwlCjr@eXdbA{a@nHeCrR{C~NKhuBrIxRnDre@hNdn@zK`xBtOnPAppAuPn_I{gArsCci@tKoDniAwl@xW{LzuIysBbe@gMvIsDdfJsgG|O}MzgCceCvIqMteHyaOjEeIfImLzDuDviHwqFvK{MlhC}wDrsFigFhE_FdEaGbqDsmG|oE{}Hrf@gm@bH{GfhCc|AxZuSbZ}T~EoGxDoHz_A_dCzIuRpN_WxGyHxIcGxqAal@nKwBrGm@|wPar@j|G}cAjHk@nTFrtA~C`qDhZdMj@dPBll@gB|`D}BtOo@pUuCrbCcg@rWyC~Me@rxC{CjhBsHly@}BnOqAjM{Bb_Ccp@p}EmiAdRcH`ZaQxGwCpJwCxKqAjKYrgDf@`Lz@`a@hF~_@~@hdE}Pr|AgQhoD}PxvFaq@dImBzHkDfPsLvHyDj[_IfFq@hdB{@nVdAd`@nFhMLr_Du\\|f@yGpu@wGhRc@nkAa@hwAyGt_Ewa@~VuCtdAiOtHg@|_@U~\\yApO}C|pA{[nMkBnYc@ptAnCjkF{BlG[|K_D`YsOplA{f@|qAqy@|x@_e@pg@m^|FsB`ZcEnG}Ad`@wO~k@aQpG}Ahs@cI~dAYnGiBbUsMfFaAbKMpP|CzHIdFkBzXyN|DiApCQxCL`EbAdQdHrDvEpC|HxDhH~@n@pAHhC{A~MsV",
+  "legs": [
+   {
+    "to": "pickup",
+    "miles": 32.3,
+    "router_min": 41,
+    "planned_min": 41,
+    "steps": [
+     {
+      "instruction": "Head east",
+      "miles": 0.06,
+      "lat": 32.77595,
+      "lon": -96.79675
+     },
+     {
+      "instruction": "Turn right onto Browder Street",
+      "miles": 0.04,
+      "lat": 32.77615,
+      "lon": -96.79584
+     },
+     {
+      "instruction": "Turn right onto Canton Street",
+      "miles": 0.11,
+      "lat": 32.77553,
+      "lon": -96.79562
+     },
+     {
+      "instruction": "Take the ramp",
+      "miles": 0.34,
+      "lat": 32.77444,
+      "lon": -96.79692
+     },
+     {
+      "instruction": "Keep right",
+      "miles": 0.33,
+      "lat": 32.77108,
+      "lon": -96.80103
+     },
+     {
+      "instruction": "Merge slight left onto Tom Landry Freeway (I 30)",
+      "miles": 29.42,
+      "lat": 32.7691,
+      "lon": -96.80607
+     },
+     {
+      "instruction": "Take exit 15C toward I 35W North, US 287 North: Denton",
+      "miles": 0.25,
+      "lat": 32.74835,
+      "lon": -97.30489
+     },
+     {
+      "instruction": "Merge slight left onto Martin Luther King Jr Freeway (US 287)",
+      "miles": 1.12,
+      "lat": 32.74928,
+      "lon": -97.30889
+     },
+     {
+      "instruction": "Keep left",
+      "miles": 0.22,
+      "lat": 32.75651,
+      "lon": -97.32464
+     },
+     {
+      "instruction": "Continue onto East 6th Street",
+      "miles": 0.35,
+      "lat": 32.75465,
+      "lon": -97.32748
+     },
+     {
+      "instruction": "Turn right onto Taylor Street",
+      "miles": 0.05,
+      "lat": 32.75215,
+      "lon": -97.33267
+     },
+     {
+      "instruction": "Turn right onto West 5th Street",
+      "miles": 0.03,
+      "lat": 32.75277,
+      "lon": -97.33309
+     },
+     {
+      "instruction": "Arrive at the pickup",
+      "miles": 0.0,
+      "lat": 32.753,
+      "lon": -97.33262
+     }
+    ]
+   },
+   {
+    "to": "dropoff",
+    "miles": 261.7,
+    "router_min": 283,
+    "planned_min": 286,
+    "steps": [
+     {
+      "instruction": "Head northeast on West 5th Street",
+      "miles": 0.33,
+      "lat": 32.753,
+      "lon": -97.33262
+     },
+     {
+      "instruction": "Take the ramp onto US 287 Bus",
+      "miles": 8.45,
+      "lat": 32.75533,
+      "lon": -97.32776
+     },
+     {
+      "instruction": "Take exit 34A toward I 20 East, US 287 South: Waxahachie, Dallas",
+      "miles": 0.62,
+      "lat": 32.67343,
+      "lon": -97.24074
+     },
+     {
+      "instruction": "Merge slight right onto Ronald Reagan Memorial Highway (I 20, US 287)",
+      "miles": 0.84,
+      "lat": 32.66814,
+      "lon": -97.23412
+     },
+     {
+      "instruction": "Keep right onto US 287",
+      "miles": 1.89,
+      "lat": 32.66814,
+      "lon": -97.21973
+     },
+     {
+      "instruction": "Continue onto US 287",
+      "miles": 48.78,
+      "lat": 32.65679,
+      "lon": -97.19394
+     },
+     {
+      "instruction": "Keep right",
+      "miles": 0.58,
+      "lat": 32.29519,
+      "lon": -96.5738
+     },
+     {
+      "instruction": "Merge slight left onto I 45, US 287",
+      "miles": 198.75,
+      "lat": 32.29547,
+      "lon": -96.56465
+     },
+     {
+      "instruction": "Continue onto Gulf Freeway (I 45)",
+      "miles": 0.96,
+      "lat": 29.77516,
+      "lon": -95.3685
+     },
+     {
+      "instruction": "Take exit 47C toward McKinney Street",
+      "miles": 0.31,
+      "lat": 29.76337,
+      "lon": -95.37051
+     },
+     {
+      "instruction": "Continue onto McKinney Street",
+      "miles": 0.18,
+      "lat": 29.76024,
+      "lon": -95.37036
+     },
+     {
+      "instruction": "Arrive at the drop-off",
+      "miles": 0.0,
+      "lat": 29.75873,
+      "lon": -95.36786
+     }
+    ]
+   }
+  ]
+ },
+ "logs": [
+  {
+   "date": "2026-10-05",
+   "starts_at": "2026-10-05T00:00-05:00",
+   "segments": [
+    {
+     "status": "off_duty",
+     "start": 0,
+     "end": 420
+    },
+    {
+     "status": "on_duty",
+     "start": 420,
+     "end": 450
+    },
+    {
+     "status": "driving",
+     "start": 450,
+     "end": 491
+    },
+    {
+     "status": "on_duty",
+     "start": 491,
+     "end": 551
+    },
+    {
+     "status": "driving",
+     "start": 551,
+     "end": 837
+    },
+    {
+     "status": "on_duty",
+     "start": 837,
+     "end": 897
+    },
+    {
+     "status": "off_duty",
+     "start": 897,
+     "end": 1440
+    }
+   ],
+   "totals_min": {
+    "off_duty": 963,
+    "sleeper_berth": 0,
+    "driving": 327,
+    "on_duty": 150
+   },
+   "totals_hm": {
+    "off_duty": "16:03",
+    "sleeper_berth": "0:00",
+    "driving": "5:27",
+    "on_duty": "2:30"
+   },
+   "on_duty_hours": 7.95,
+   "miles_today": 294.0,
+   "from": "Dallas, TX",
+   "to": "Houston, TX",
+   "remarks": [
+    {
+     "minute": 420,
+     "time": "07:00",
+     "status": "on_duty",
+     "label": "Pre-trip inspection",
+     "place": "Dallas, TX",
+     "mile": 0.0,
+     "reasons": []
+    },
+    {
+     "minute": 450,
+     "time": "07:30",
+     "status": "driving",
+     "label": "Driving",
+     "place": "Dallas, TX",
+     "mile": 0.0,
+     "reasons": []
+    },
+    {
+     "minute": 491,
+     "time": "08:11",
+     "status": "on_duty",
+     "label": "Pickup",
+     "place": "Fort Worth, TX",
+     "mile": 32.3,
+     "reasons": []
+    },
+    {
+     "minute": 551,
+     "time": "09:11",
+     "status": "driving",
+     "label": "Driving",
+     "place": "Fort Worth, TX",
+     "mile": 32.3,
+     "reasons": []
+    },
+    {
+     "minute": 837,
+     "time": "13:57",
+     "status": "on_duty",
+     "label": "Drop-off",
+     "place": "Houston, TX",
+     "mile": 294.0,
+     "reasons": []
+    },
+    {
+     "minute": 897,
+     "time": "14:57",
+     "status": "off_duty",
+     "label": "Off duty",
+     "place": "Houston, TX",
+     "mile": 294.0,
+     "reasons": []
+    }
+   ],
+   "brackets": [
+    {
+     "start": 420,
+     "end": 450,
+     "place": "Dallas, TX"
+    },
+    {
+     "start": 491,
+     "end": 551,
+     "place": "Fort Worth, TX"
+    },
+    {
+     "start": 837,
+     "end": 897,
+     "place": "Houston, TX"
+    }
+   ],
+   "recap": {
+    "on_duty_today_min": 477,
+    "cycle_used_min": 957,
+    "available_tomorrow_min": 3243,
+    "approximate": true
+   }
+  }
+ ],
+ "log_header": {
+  "time_zone": "America/Chicago",
+  "utc_offset": "-05:00"
+ }
+}

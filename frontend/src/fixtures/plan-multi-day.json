@@ -1,0 +1,1141 @@
+{
+ "summary": {
+  "from": "Chicago, IL",
+  "pickup": "Indianapolis, IN",
+  "dropoff": "Denver, CO",
+  "total_miles": 1268.1,
+  "driving": "23:24",
+  "driving_min": 1404,
+  "elapsed": "47:24",
+  "elapsed_min": 2844,
+  "start": "2026-10-05T07:00-05:00",
+  "pickup_arrival": "2026-10-05T11:07-05:00",
+  "dropoff_arrival": "2026-10-07T05:24-05:00",
+  "end": "2026-10-07T06:24-05:00",
+  "stop_counts": {
+   "pre_trip": 3,
+   "pickup": 1,
+   "dropoff": 1,
+   "fuel": 1,
+   "break": 0,
+   "rest": 2,
+   "restart": 0
+  },
+  "restart_needed": false,
+  "sheets": 3
+ },
+ "stops": [
+  {
+   "kind": "pre_trip",
+   "status": "on_duty",
+   "start": "2026-10-05T07:00-05:00",
+   "end": "2026-10-05T07:30-05:00",
+   "duration_min": 30,
+   "mile": 0.0,
+   "lat": 41.87556,
+   "lon": -87.62435,
+   "place": "Chicago, IL",
+   "reason": null,
+   "explanation": "Pre-trip inspection at the start of the duty period."
+  },
+  {
+   "kind": "pickup",
+   "status": "on_duty",
+   "start": "2026-10-05T11:07-05:00",
+   "end": "2026-10-05T12:07-05:00",
+   "duration_min": 60,
+   "mile": 180.7,
+   "lat": 39.76825,
+   "lon": -86.15848,
+   "place": "Indianapolis, IN",
+   "reason": null,
+   "explanation": "Pickup: loading, 1:00 on duty."
+  },
+  {
+   "kind": "rest",
+   "status": "sleeper_berth",
+   "start": "2026-10-05T19:30-05:00",
+   "end": "2026-10-06T05:30-05:00",
+   "duration_min": 600,
+   "mile": 586.5,
+   "lat": 38.96014,
+   "lon": -93.19209,
+   "place": "near Marshall, MO",
+   "reason": "driving_limit",
+   "explanation": "11-hour driving limit reached after 11:00 of driving. 10:00 in the sleeper berth resets the 11- and 14-hour clocks."
+  },
+  {
+   "kind": "pre_trip",
+   "status": "on_duty",
+   "start": "2026-10-06T05:30-05:00",
+   "end": "2026-10-06T06:00-05:00",
+   "duration_min": 30,
+   "mile": 586.5,
+   "lat": 38.96014,
+   "lon": -93.19209,
+   "place": "near Marshall, MO",
+   "reason": null,
+   "explanation": "Pre-trip inspection at the start of the duty period."
+  },
+  {
+   "kind": "fuel",
+   "status": "on_duty",
+   "start": "2026-10-06T13:31-05:00",
+   "end": "2026-10-06T14:01-05:00",
+   "duration_min": 30,
+   "mile": 999.7,
+   "lat": 39.11177,
+   "lon": -100.55995,
+   "place": "near Oakley, KS",
+   "reason": "fuel_interval",
+   "explanation": "Fuel at or before every 1,000 miles (1,000 miles since the last fill)."
+  },
+  {
+   "kind": "rest",
+   "status": "sleeper_berth",
+   "start": "2026-10-06T17:30-05:00",
+   "end": "2026-10-07T03:30-05:00",
+   "duration_min": 600,
+   "mile": 1191.1,
+   "lat": 39.36372,
+   "lon": -103.87757,
+   "place": "near Limon, CO",
+   "reason": "driving_limit",
+   "explanation": "11-hour driving limit reached after 11:00 of driving. 10:00 in the sleeper berth resets the 11- and 14-hour clocks."
+  },
+  {
+   "kind": "pre_trip",
+   "status": "on_duty",
+   "start": "2026-10-07T03:30-05:00",
+   "end": "2026-10-07T04:00-05:00",
+   "duration_min": 30,
+   "mile": 1191.1,
+   "lat": 39.36372,
+   "lon": -103.87757,
+   "place": "near Limon, CO",
+   "reason": null,
+   "explanation": "Pre-trip inspection at the start of the duty period."
+  },
+  {
+   "kind": "dropoff",
+   "status": "on_duty",
+   "start": "2026-10-07T05:24-05:00",
+   "end": "2026-10-07T06:24-05:00",
+   "duration_min": 60,
+   "mile": 1268.1,
+   "lat": 39.73921,
+   "lon": -104.98549,
+   "place": "Denver, CO",
+   "reason": null,
+   "explanation": "Drop-off: unloading, 1:00 on duty. Trip complete."
+  }
+ ],
+ "timeline": [
+  {
+   "kind": "pre_trip",
+   "status": "on_duty",
+   "start": "2026-10-05T07:00-05:00",
+   "end": "2026-10-05T07:30-05:00",
+   "start_mile": 0.0,
+   "end_mile": 0.0,
+   "clocks": {
+    "driving_left_min": 660,
+    "window_left_min": 840,
+    "break_left_min": 480,
+    "cycle_left_min": 3000
+   }
+  },
+  {
+   "kind": "driving",
+   "status": "driving",
+   "start": "2026-10-05T07:30-05:00",
+   "end": "2026-10-05T11:07-05:00",
+   "start_mile": 0.0,
+   "end_mile": 180.7,
+   "clocks": {
+    "driving_left_min": 660,
+    "window_left_min": 810,
+    "break_left_min": 480,
+    "cycle_left_min": 2970
+   }
+  },
+  {
+   "kind": "pickup",
+   "status": "on_duty",
+   "start": "2026-10-05T11:07-05:00",
+   "end": "2026-10-05T12:07-05:00",
+   "start_mile": 180.7,
+   "end_mile": 180.7,
+   "clocks": {
+    "driving_left_min": 443,
+    "window_left_min": 593,
+    "break_left_min": 263,
+    "cycle_left_min": 2753
+   }
+  },
+  {
+   "kind": "driving",
+   "status": "driving",
+   "start": "2026-10-05T12:07-05:00",
+   "end": "2026-10-05T19:30-05:00",
+   "start_mile": 180.7,
+   "end_mile": 586.5,
+   "clocks": {
+    "driving_left_min": 443,
+    "window_left_min": 533,
+    "break_left_min": 480,
+    "cycle_left_min": 2693
+   }
+  },
+  {
+   "kind": "rest",
+   "status": "sleeper_berth",
+   "start": "2026-10-05T19:30-05:00",
+   "end": "2026-10-06T05:30-05:00",
+   "start_mile": 586.5,
+   "end_mile": 586.5,
+   "clocks": {
+    "driving_left_min": 0,
+    "window_left_min": 90,
+    "break_left_min": 37,
+    "cycle_left_min": 2250
+   }
+  },
+  {
+   "kind": "pre_trip",
+   "status": "on_duty",
+   "start": "2026-10-06T05:30-05:00",
+   "end": "2026-10-06T06:00-05:00",
+   "start_mile": 586.5,
+   "end_mile": 586.5,
+   "clocks": {
+    "driving_left_min": 660,
+    "window_left_min": 840,
+    "break_left_min": 480,
+    "cycle_left_min": 2250
+   }
+  },
+  {
+   "kind": "driving",
+   "status": "driving",
+   "start": "2026-10-06T06:00-05:00",
+   "end": "2026-10-06T13:31-05:00",
+   "start_mile": 586.5,
+   "end_mile": 999.7,
+   "clocks": {
+    "driving_left_min": 660,
+    "window_left_min": 810,
+    "break_left_min": 480,
+    "cycle_left_min": 2220
+   }
+  },
+  {
+   "kind": "fuel",
+   "status": "on_duty",
+   "start": "2026-10-06T13:31-05:00",
+   "end": "2026-10-06T14:01-05:00",
+   "start_mile": 999.7,
+   "end_mile": 999.7,
+   "clocks": {
+    "driving_left_min": 209,
+    "window_left_min": 359,
+    "break_left_min": 29,
+    "cycle_left_min": 1769
+   }
+  },
+  {
+   "kind": "driving",
+   "status": "driving",
+   "start": "2026-10-06T14:01-05:00",
+   "end": "2026-10-06T17:30-05:00",
+   "start_mile": 999.7,
+   "end_mile": 1191.1,
+   "clocks": {
+    "driving_left_min": 209,
+    "window_left_min": 329,
+    "break_left_min": 480,
+    "cycle_left_min": 1739
+   }
+  },
+  {
+   "kind": "rest",
+   "status": "sleeper_berth",
+   "start": "2026-10-06T17:30-05:00",
+   "end": "2026-10-07T03:30-05:00",
+   "start_mile": 1191.1,
+   "end_mile": 1191.1,
+   "clocks": {
+    "driving_left_min": 0,
+    "window_left_min": 120,
+    "break_left_min": 271,
+    "cycle_left_min": 1530
+   }
+  },
+  {
+   "kind": "pre_trip",
+   "status": "on_duty",
+   "start": "2026-10-07T03:30-05:00",
+   "end": "2026-10-07T04:00-05:00",
+   "start_mile": 1191.1,
+   "end_mile": 1191.1,
+   "clocks": {
+    "driving_left_min": 660,
+    "window_left_min": 840,
+    "break_left_min": 480,
+    "cycle_left_min": 1530
+   }
+  },
+  {
+   "kind": "driving",
+   "status": "driving",
+   "start": "2026-10-07T04:00-05:00",
+   "end": "2026-10-07T05:24-05:00",
+   "start_mile": 1191.1,
+   "end_mile": 1268.1,
+   "clocks": {
+    "driving_left_min": 660,
+    "window_left_min": 810,
+    "break_left_min": 480,
+    "cycle_left_min": 1500
+   }
+  },
+  {
+   "kind": "dropoff",
+   "status": "on_duty",
+   "start": "2026-10-07T05:24-05:00",
+   "end": "2026-10-07T06:24-05:00",
+   "start_mile": 1268.1,
+   "end_mile": 1268.1,
+   "clocks": {
+    "driving_left_min": 576,
+    "window_left_min": 726,
+    "break_left_min": 396,
+    "cycle_left_min": 1416
+   }
+  }
+ ],
+ "route": {
+  "polyline": "gyq~FdcyuO|EC^zS|mB}AzGlQpLO@pFhVo@pPlArGFna@oA~dDkChGf@`KrEnGdA~s@_Bjq@i@jd@~@|e@g@vDk@hEwBlC_CxFsHxAsDz@oHDuZ|@gFnC}FrQcWvuDs}FvWm`@vSgXfCgErFyMfl@a~@~F{HjRsQxHuJpTy^`IoTdDeGln@{r@hNuMfMgJfKwCr}@An@pBf@N`FErBiB|PDbc@~AfR_AnJ_Br_Col@jKcElNoIz[yYnEwCpKgCj]c@tD{@rE}B|HyIla@{x@jFqHxEoDpEeBt[uF~F{CrDkDrFuJdV_p@tBoJn@iJp@s{DpB{rBdFkhAhIw_A`AeWi@wWuLunA{@qTjD{_D~AuVhOuw@dDeZnPUAwkAzV}jBtAkAlFXzQgB~[^vD_@lEsAfDkBhFeFrUid@`FkFtJaFrHeA`FH|Ex@tFvB|CrBvoAliAnF`DlFjB~FbAzENbfBeAxMn@bLzCdoAre@nNpDjR`CjSt@xqBIxNb@hM~@nqAnSfLbAtLZbKEbN{@nr@aHda@cCl`Ic@tMv@hHhAfQxExe@|QnIzAtGJhLwAhmJwoCjYiFpUgAxjFkDjNiAlNcCn|@{SxY{CjvFSlLo@hIcB|K_EpIkFhe@o^zGuDzIgDnFqAlKiAzl@MnOm@bLmArSiErN{E|kDgyApLkD~SeDrQm@|YKz|H{AtGx@rE|A|g@tUfK|BdKv@d{CNpjBrApx@A|bA_Avf@CvKi@jToDpLyDjI{DtmCy`BnUeStuCwxCvLaInGsB~HkAnmCaYtJaB`N}DrlDiwA`{Aek@ffDegBrOaHh_EqzAnEaCrHcIlj@ydA`HuJzCoCtyBy{AxvCo_BrPmNdkBkgBlZkXhuFgbExOgKzQyHxwAe_@tEcBtEyCzEcF|DoGpq@u~AjJ_NdDgDbhHivGrNmL|wA__ArS_OdKyL`oA_lBxJ{LtIgIjsCsvBfK}Kt~@ymAjFmFriAw{@lkCgfBlFyGfF}Lbb@sjB`GwMhHuI|JyFz_AqYpoEybAvGmCbJ}H~SgX|FqFx_Aag@rKwGvR{OvaAw|@vHoHxGiJhh@_`ApJsL|KeJloA}}@zOsJlIsCpfAmSnMiE`wCcdBv}CeoBdIkLhl@urAhGsKr{B}}CrImN~GiNnH_RvvAseEtFcMdDcFjNmOv~BueCzbBoyB~Wsa@fsCgtEfRqUh{CyoCxOiLt`Be_A`OwL`eBg}A|LmJdG_CjH}Ah_Dgm@d`GyhBvOyBz^{ApTkD`SwGjOiIdPyL~LeN|P}Wpd@acArK{]tCgN~Mcz@jCmK`H{RvHwM|tDolEhhH}lJ~MoOlZcYt`DsfCp|@u{@`LiIzw@we@~KuI`L_Mz~AcrBnMuLrXcQtCqChCkEpHiR|Zq[nWcVnjAet@~HcI|CmGzB_JnDip@tAiIzCqItFiHbkAeeAdFmHvCyIjA}H\\mIg@i`Cx@kKzBsItk@ywA|Ueb@zA{KBum@lBsJnD{FjDaC|DeA`w@oA~_@qFzEj@rJnE~G`BtIZ|n@tGdKs@rJsClEg@nY{_@nPTLeRv@W^sAWoA{@c@aAb@UhARhA~@f@MdRvpAzAtD`@vAdBz@rGL`OuAbWcAbhAwGzm@o@tMv@jkAxBbYpJbi@lFvdArBlMlCrJ~EjL|GfKnJ`JjIzEhHfCxJ`Bpc@p@lFjA`GbD`EfEbo@p_AvH~Hfq@`m@lEbH|FhTvBvLx@zr@nApLzCpMhGnMdcApuA|IzPdCnIbTvdAdLdd@~IbXzRbh@jp@rnBhzAxfFzDxIry@frAlIjPxIdWr{@zxC`o@bwA`dAfjBpH|NvFvNzKxc@tx@|wDzcA|oDbEzTpUzmBt^plCrx@pmEz_@fiCxG~Vfh@|gAhEfNlDlRx|@fiJvCjTdi@nsC`_Ab_IhEd`@j@pUwAvtIx@tKxk@zgEvW`lA`^jzA`a@`{Bxj@tyBx^rcCpDpQr{Ab}D`gAj_CdG~PtC~N~ArN`g@dvFdm@ruCzDxNfWrt@`E`RtB`UZpO_Lx}Mf@~J~AvJjTnp@|CjRfArNb@b~FfAl`@fHh}@tE|\\hJz\\d~@lgCnCnN`AdSoCvnAi@pbJqBthBhCr`DmAlMsAnF_Vvl@uG~MoGpJur@xu@mE|H_D|JoAbIe@jJXd|CtBl[fc@jjDtAza@vLdh@fVxjBbDdMhEtJrZjb@bEtHxFhRfBnOR~Me@bLwAvKuIf`@aA~LGdMpA~QjNrt@bCbXfAtaEZdLlCbWdMdm@|BvZe@~_Ew@`\\}Dn}@IdLlSdxCrC~U|CpMzExMz`ArlBzKp[hHx`@hBvUd@pXNhw@j@vOtBlUhhBb|JjJt^xLh]fkBvpE|FnPfE|PppBn{Jfg@diB`GlRhHhPvHrLbOvPzHtKrIvQnCrIdw@bvD~EpRbEhLfJtRrfDh{FrFfKdGdSbBjK|@vO?fcAt@bTpDrWdCpJ|Yxt@fF|VhBhXnA~~@|CxWtG|UtDpIjEtHrh@bv@tKzRdHpUfRvgAnC~WnNz{CxBbUdCtMpClJ`InQr}@zuAtKtRtJxSlN~_@dxBpfHzjBfsInoAfwEjJ|S`u@hjAhFhMlClJpDtTdkAznNdr@bdItAtv@fCnShEtQrC`Qz\\v{DfCrSrEhSvIjUhNtTtLpLvQfLhHvChJdCbtCpm@fGlBlMhG~O|L~LzOzJjRfIpXl{@`pEnMl}@nKze@dUjw@zeCheLrbBtfJvsAhhGfUdhArwBvdL~t@ndEhcBt{HtFzZtB|Q|A|Vb@t`@qRl_R_BhRgGd\\aAnQ_@dpAh@zKrBnO|DzNnE~JfZla@dFrJnDtJ~xEfkRnLja@zIdUbHxKdErEtFvEtGvDvWpIfHzDjHdHrHzM`DxKdB~LvL~hB|D|VhEfQhy@xuBbi@pmAln@n{Aph@`|A`Jt[pDlQhDnVvXzmCdFd\\vJla@fn@~nBrIra@fr@nqEt@xO]z[bAjQpc@nnBhBpOlFjx@lAxJtCtLbcAzxCpCvLtAvOBlMyJrmA]xO^~JhAzJfPjx@fCfH`GtKf~@rgArJlNzGhMzGdP|Zd|@l^jrApIlWx_AvsBzXve@vHzT~DvVdArXwAdaAR~fBk@bfAJdk@e@dMeCtXSpKv@|P`DdTv@|KCrv@lKriDtChR|BrH`EvInGpIdm@xm@bKvPrZjcAzBvLlArMdRb|CtBli@`@po@}BtsAbAjc@bBnT`CpRvNhu@pFf]|D|_@lB~[bA`h@_@fgARt\\|Cpn@rLnxA`AjRQtp@lB`_A?jS}JttCsElb@cJrf@cAnPMvhAvAdjEqG`}N_@rHuBzN{]vrA_FlVmDjYmBx^IpVf@j_@UrQpC~jAxAfMjBvIpMn]jChKvAdMR~OoApOw`@fcCsDb\\]zXtArmAMjIkRrtBo@pN}AttH}AvtBs@lYcUztEeAtf@sCj[wGprA_Er`@_QfbA{@zSnAvSrD|Oz`Cx|GxOtg@`EpHjEvEnErCbNjF~BjBlCjG\\lH_B|MsgBx{Gk`@dwAuIjSsc@pt@sFtKgJjUcI|XuHlc@{^lgDcExRiIhWsCfMiQz|Ag@xNkAtuBcI`}BFxUrBb^BjQ}PdyBu@dXkAnhAIv[xC|nDsJfkMaMphI@d\\lDjbCiArLmBhHyClG{G|IuCrG_BtH_@pHL|k@r@nLvBvJhUpq@lDzOfBhNf@jKKd]{AdWe\\nfCgn@lqDcBjQqBzh@}BdW}t@|vF}BtL}IzV_BrKW|I|Ab_AjHpzAKvt@b@rO~BrVx^bqC~VhkED||AiAbL{GbZ}BhOuB`Vq@zU`@l^~HvsAx@lVKhXgBrf@_@pq@aCxP_a@rnBeF`RoFzNkHfOwIdNgy@naAeEdGiIzPeGpTwBdOiAtRRdvC}Kp}AgS``Ac[rl@eIlV}eAhyFA|KrJzt@TdF_@lKot@doCeNnq@gJpTaGdRcVpfA}cBbdJuBhOgf@v`Lc@vZd@hPjB~SpC|P~Mrl@tCtPvHzuBlo@ddHDxPmAhLmBvHiuAdkDeE~KmB`Jy@hLaFfnK_Kzm@sqCrzOeD`[eArRBjRbOdgBJrKaIxy@{b@tbCiApJgExzKgBnUwEtVo`@`kAcBlIs@|IHr_M}G|`MU|yBuAtsA_B~]JzMu@tJqTrsBg@vJgA~cBp@b~B_@dNqGxaAUzP^d`BQbx@kEnsCJrQ_@xUo@rI_Apt@{BfT}Ozd@{K~`@mBzM_AfNeAzd@qDp`CPbSbAvM|BxLpRvh@bBhKb@~LgBjSsTn}@sHzzAoDh{AiSfuTh@rV|BhWhFjXrHxUbKdT`l@vgA`p@liA`kAfvBtCdJjBrO`]|ii@X|}P~IlvOaA|NyDjNaCzEw|@dnAwE~KmCbQkuAhhg@gBfNog@vbC}D`W_Cj]{ClyAcDfk@gWloUwK|rEq@|dBeJ~kGeA`Qcg@x~DcGpn@_Crj@eH~}EuMjtAaPx_ERtNxPdpBbInkBVvXgBje@{Hnt@c@`JuFvyIwAnO{BlMyb@t{A{CtSu@dP_AzlBoC|yBi@`wCw]fmXmFdmD}EnmGgKfyJiBhmE_ArRmRntBqBt^{BtxAqBvaDkO`xA{AzRo@dScAvpAkCnh@}qAltTo}@frMuShmNy@|SoD|OilAbfD{Oba@{_@thAcBdIuNljAs@rLU~Vw@jGaAlC_DlDsq@tb@oG~@{TScK|AsQvH{M@_CZyD`D{BzHgAtLDpGnE|WVbHkAdoAu@zJ_ErM]dGf@nDtEdLnAdLyApv@b@tSMbM{@nKsIzg@}ArO_@fSIbt@cEjYCfHp@|FnExHhCdBrOdGtJhH~CdF~AnEfAtNgAr[yCp^{AbHqK|WkDzOaB`QiAld@gI~j@{BpJ{D`LkPr^uItMoChJ]nHtA`RAhj@}Clz@J|O|Chn@LtPiDtsAu@hwBt@fXfDdn@`Ab_DQvSsIb_DOzQfDrxC`Bhh@fBjTzEv]j\\faB`DnSpTfyBzBvPrZz{AzApO|Alb@fC|KvQnh@`C`MlF|sAvBhZbSrgBfn@dxEjEjg@xJjp@bA`NpErpAjBhRzSl}@dk@||AjWtsArr@fbCdM|ZvrBbhEpCvH~HxZfDtIdHtLrQrT~Xxk@zIbZ|Mzu@|FjU~q@jbB~EpPvL||@vFrg@\\lOg@h|BZdW|VrjDC~UqBfVie@laCoBvOoA`TmAbgEtAl[xErc@n@l\\sElrBuMhjAu@vLa@d|FiJxcCkDfXuy@|jEq`@flCaBpV_BryD}@fT{BnPs}@j}E_BzPyBxu@_Fdl@U|ITpLlCh\\yCro@AbX~Cpn@fCrNp`@|tArDhJnC~Dtx@j}@zn@diAnm@zw@nKdV`Zxt@fCjKr@bPSjiAo@pCsAfAgP?iDtBwApCg@jC}Db|@uBbOgBfGilAxyCaE|QcGrl@sD|MaF`JgHpHuJfFitBdj@qK~EoE~DgDtEyTvd@eIrLyOlP_RhJwD~DgCnG_ApIHdF|BlUHnd@bDxwA`BxO|EhSrA|I\\rGFhe@qDx|@yAdPkCtNgQjk@aFzScF``@uAd`@?pyBb@raAk@ho@e@vxB_Al`R{@rhBM~_H|@dtFsAvReIz_@c@~Kd@lIvK`}@~@|PFpaEaA`RmCrQ{a@j{AaCbSk@jOrAjmHaBf`IhBrqXb@f_@lDbnAFbPoA~]sX|uCmAdW[z^v@v`@~Bd]h\\lkChBdSlAxa@EliCmAfj@wPjbDo@jTQv[hC|}Ck@tW{HztAe@h]fLvqHbAl_@j^hwHpAhNhBlKlDzM|DfKtKvQpK~KfrAvgAzMfPjMlUlH|QlJnZjFvTdFlXxEb[zS~jB|BxK|CvHjCdEh_ArkAdCdEdgA|nCxDlPn@vMQ~aAmE|jAk@hqFdAbX``AzsM`@v\\MttDhAfXnCxQ~DbOvc@thAhS`o@~~@lhDvlCrgJtDdOjBnMpAjXHp}FdA~]~AbSf^lsCrD~jD`BjVhExTz\\`lAdC`N~AzQXbeDxBh{Hf@f{DbAjZjDjUfI~Vv_BttC|DbKfClJ|DjWx@jTJvkEhA~gA~@vdHt@hPr\\t~CrCzNtDvLdhCl~GxDpMvAdJl@|JpM`hGm@zWsS~rBy@zR[vqZwArsHgC~yAZrNvDzn@^`TwBzlDtAb_CEbbMzAdUvOvbAhA~Kh@jPUv{Ab@jNfEtW|YrbAzDvWv@xP?leBnAbT|AtIzCbK|DdI|Yfc@dFfMzB|IxKht@lBnR\\hJn@xiB|@nPjBbNnD`OvCrIlQl_@hD`LpDzStA|YnC`{IGha@oEtdB}@`oDhAppGjBt_CF|_HeAxiB]|sBxBlz@SpQwBvh@K~SjA~eIsB|rAqAhXk]jsCaCxWsIlrCs@bd@~B~xGIprB_BblADhqIm@ru@Atn@p@rr@a@niIxBjs@{Alo@@jsBkAtSwe@vlDuAvZA~tPlDnlA\\zqF{@rjAeBllJzGfvCAnKw@lJuA|GoWf|@s}@xnDmCbPiArOg@vcEw@hq@gIptDvCbtAQv{@dFtaAj@~jFg@rOy@lIeCxN_CxIemCd~H{eBx`HuGh[aChTgAdXFbrEYzMiAbN}}Ct}P}Fj\\gCzUgA`b@|@`hCsBzuBKzcCqAzV_DhRcs@`}CivBz}K_CvTw@|QmE|zCkBn\\cfB|uL}bA`iKewAvoLq@bYP`qIoBpfB`BriAiA`rNiAj_Ag@zqCl@joEkAtWuD`UgHxTclLlp[iGnUyBjPq@fMK|OjAjhNi@dYoDzc@gmAdqK}BzYq@~UkAteGnAhkF[hiTeDrsJn@lgI]pNeAzJkF~R_GxKyDxEysE`_EuSbPm`Cn_BeRvNstBfbCkN|MyObL{tCncB__OvgLgLdNwJtRma@j{AgGvOqGvKeNfO}hFnuEqJxM}H~PuGrWkCzWU`W?~bHiAxqFgBztBJzhBw@~oDoAvsPD~vCXrUbCfVhCdMnC|IdeEn}KdEfP~A~J`BhXt@xbNlAffHl@rsZyA~eBP`iEZjOrInwA^jOwG~uB?dqB{@`nEl@xgLdF~cBuA|d@?``@aDf]_@zJzDnr@gAvg@IvlQiDd~ChCxjD|m@loLdKleAxApaApw@d~NvD~VvH~UjEvIhv@lnAhHrO`DdK|C|OnAfLn@fPX~sAu@~lLnA|eOVzWdDpo@`@rYYvTqH|eBa@|Uj@pb]vEr{Be@b_JyDvoTjEtlFJ~gCz@hX`BbTbzBtvS`AvYOhKaBdSc_AtcG{CpWmAdRwOv`Da@~SHncJtCryD|OvhPj@|WjD`j@p@nWaAt}ANz\\hRzkQ`EjiBk@z|@hMboLbAhOrDrX`AzLbA|z@r@|NhBfOp\\|sBbZ~rDj@rf@kP|wJs@tt@r@dOjBfOlKlb@|C|RnRxkBRtH[tJ{@bH}D~Mww@r|AoEjO{BbO{@hWTl|GqAzPwf@jpDsG`a@a[`wAkHvUu{AfaD{JrPaIlKuPzPoSjO{rCb}AuLvHkRhP}QxTcPtXq`AbzBcLjOeQtNuSjLadAfd@_MpEkTdF{iAtRaM|D{}Ap{@gMfI_LdJm`Bl_BoLdK_KtFagFn}BkRfKaJrGgmAhfAmI`I{c@vg@eHvGqiEnpCe~Jn`GoOhG}rA`YkLvD_xBlqAagEflEeLxM{GbLqrB|`E}GnOiGhSsdAfzEyj@foEs|@dcD}pAhdIoEzYq@pIc@xS`Bbc@OvNiYz{CsEpxB@lW|J`vEGbQc_@|pEk@pNs@nzQqEh~HoC|yKdA|XpHje@z@fQuMncCp@pt@Ht|@a@rpH}Djc@kBhKmeApwBq_BrvG{Gx^sElg@{l@fpO]bT@xmCy@tOuGhn@Mzo@}@ff@BfaBjDx_BaAbd@C|TY`D{B`J`@nEvAtBrBr@tOcDnDDxIdBdIr@jHpD`JzJtMzHpDnAhDHxJmAtOYrEsBpE{EtIoAxY{`@by@@P}NbT@t@fBpAT",
+  "legs": [
+   {
+    "to": "pickup",
+    "miles": 180.7,
+    "router_min": 217,
+    "planned_min": 217,
+    "steps": [
+     {
+      "instruction": "Head south on South Michigan Avenue",
+      "miles": 0.08,
+      "lat": 41.87556,
+      "lon": -87.62435
+     },
+     {
+      "instruction": "Turn right onto East Harrison Street",
+      "miles": 0.17,
+      "lat": 41.87445,
+      "lon": -87.62433
+     },
+     {
+      "instruction": "Turn left onto South State Street",
+      "miles": 1.23,
+      "lat": 41.87439,
+      "lon": -87.62759
+     },
+     {
+      "instruction": "Turn right onto South Archer Avenue",
+      "miles": 0.18,
+      "lat": 41.85654,
+      "lon": -87.6272
+     },
+     {
+      "instruction": "Turn left onto South Clark Street",
+      "miles": 0.15,
+      "lat": 41.85512,
+      "lon": -87.63015
+     },
+     {
+      "instruction": "Turn right onto West Cermak Road",
+      "miles": 0.06,
+      "lat": 41.85295,
+      "lon": -87.63007
+     },
+     {
+      "instruction": "Turn left",
+      "miles": 0.17,
+      "lat": 41.85294,
+      "lon": -87.63128
+     },
+     {
+      "instruction": "Keep left",
+      "miles": 0.52,
+      "lat": 41.85045,
+      "lon": -87.63115
+     },
+     {
+      "instruction": "Keep left",
+      "miles": 0.24,
+      "lat": 41.84299,
+      "lon": -87.63133
+     },
+     {
+      "instruction": "Merge slight left onto Dan Ryan Expressway (Express) (I 90, I 94)",
+      "miles": 3.31,
+      "lat": 41.8395,
+      "lon": -87.63107
+     },
+     {
+      "instruction": "Take exit 59A toward I 90 East",
+      "miles": 0.41,
+      "lat": 41.79178,
+      "lon": -87.63129
+     },
+     {
+      "instruction": "Merge slight right onto Dan Ryan Expressway (Local) (I 90, I 94)",
+      "miles": 0.49,
+      "lat": 41.7858,
+      "lon": -87.63161
+     },
+     {
+      "instruction": "Keep left onto Chicago Skyway (I 90)",
+      "miles": 4.47,
+      "lat": 41.77865,
+      "lon": -87.63119
+     },
+     {
+      "instruction": "Continue straight onto Chicago Skyway (I 90)",
+      "miles": 0.2,
+      "lat": 41.73649,
+      "lon": -87.56782
+     },
+     {
+      "instruction": "Merge slight right onto Chicago Skyway (I 90)",
+      "miles": 3.04,
+      "lat": 41.73434,
+      "lon": -87.56509
+     },
+     {
+      "instruction": "Continue onto Indiana Toll Road (I 90)",
+      "miles": 0.96,
+      "lat": 41.70293,
+      "lon": -87.5244
+     },
+     {
+      "instruction": "Keep left onto Indiana Toll Road (I 90)",
+      "miles": 0.01,
+      "lat": 41.68936,
+      "lon": -87.52224
+     },
+     {
+      "instruction": "Turn right",
+      "miles": 0.18,
+      "lat": 41.68919,
+      "lon": -87.52219
+     },
+     {
+      "instruction": "Take the ramp onto Indiana Toll Road (I 90)",
+      "miles": 1.81,
+      "lat": 41.68694,
+      "lon": -87.52228
+     },
+     {
+      "instruction": "Keep left onto Indiana Toll Road (I 90)",
+      "miles": 11.3,
+      "lat": 41.66112,
+      "lon": -87.51771
+     },
+     {
+      "instruction": "Take exit 14B toward SR 53: Broadway",
+      "miles": 0.29,
+      "lat": 41.60598,
+      "lon": -87.34266
+     },
+     {
+      "instruction": "Turn right onto Broadway (SR 53)",
+      "miles": 0.19,
+      "lat": 41.60486,
+      "lon": -87.33727
+     },
+     {
+      "instruction": "Turn left onto East 5th Avenue (US 12, US 20)",
+      "miles": 1.57,
+      "lat": 41.60206,
+      "lon": -87.33716
+     },
+     {
+      "instruction": "Turn right onto Casimir Pulaski Memorial Highway (I 65)",
+      "miles": 132.62,
+      "lat": 41.59825,
+      "lon": -87.30761
+     },
+     {
+      "instruction": "Keep left onto I 65",
+      "miles": 15.41,
+      "lat": 39.93909,
+      "lon": -86.34609
+     },
+     {
+      "instruction": "Take exit 114 toward Dr. Martin Luther King Jr. Street",
+      "miles": 0.41,
+      "lat": 39.78804,
+      "lon": -86.16665
+     },
+     {
+      "instruction": "Continue onto North West Street",
+      "miles": 0.46,
+      "lat": 39.78213,
+      "lon": -86.16766
+     },
+     {
+      "instruction": "Turn slight left onto Indiana Avenue",
+      "miles": 0.41,
+      "lat": 39.77564,
+      "lon": -86.16682
+     },
+     {
+      "instruction": "Turn right onto North Capitol Avenue",
+      "miles": 0.19,
+      "lat": 39.77139,
+      "lon": -86.16156
+     },
+     {
+      "instruction": "Turn left onto West Market Street",
+      "miles": 0.16,
+      "lat": 39.7686,
+      "lon": -86.16167
+     },
+     {
+      "instruction": "Turn right",
+      "miles": 0.02,
+      "lat": 39.76853,
+      "lon": -86.1586
+     },
+     {
+      "instruction": "Arrive at the pickup",
+      "miles": 0.0,
+      "lat": 39.76825,
+      "lon": -86.15848
+     }
+    ]
+   },
+   {
+    "to": "dropoff",
+    "miles": 1087.3,
+    "router_min": 1165,
+    "planned_min": 1187,
+    "steps": [
+     {
+      "instruction": "Head southeast",
+      "miles": 0.17,
+      "lat": 39.76825,
+      "lon": -86.15848
+     },
+     {
+      "instruction": "Turn right onto West Market Street",
+      "miles": 0.16,
+      "lat": 39.76853,
+      "lon": -86.1586
+     },
+     {
+      "instruction": "Turn left onto North Capitol Avenue",
+      "miles": 0.36,
+      "lat": 39.7686,
+      "lon": -86.16167
+     },
+     {
+      "instruction": "Keep right onto South Capitol Avenue",
+      "miles": 0.46,
+      "lat": 39.76332,
+      "lon": -86.16186
+     },
+     {
+      "instruction": "Take the ramp",
+      "miles": 0.39,
+      "lat": 39.75661,
+      "lon": -86.16213
+     },
+     {
+      "instruction": "Merge slight left onto Dwight D Eisenhower Highway (I 70)",
+      "miles": 143.07,
+      "lat": 39.7538,
+      "lon": -86.16676
+     },
+     {
+      "instruction": "Keep right onto I 70",
+      "miles": 76.97,
+      "lat": 39.09848,
+      "lon": -88.57778
+     },
+     {
+      "instruction": "Keep right onto I 270",
+      "miles": 29.68,
+      "lat": 38.75335,
+      "lon": -89.89401
+     },
+     {
+      "instruction": "Take exit 20A toward I 70: Saint Louis, Kansas City",
+      "miles": 0.28,
+      "lat": 38.76001,
+      "lon": -90.42877
+     },
+     {
+      "instruction": "Continue",
+      "miles": 0.47,
+      "lat": 38.75812,
+      "lon": -90.43342
+     },
+     {
+      "instruction": "Keep right",
+      "miles": 0.46,
+      "lat": 38.75328,
+      "lon": -90.4391
+     },
+     {
+      "instruction": "Merge slight left onto I 70",
+      "miles": 103.17,
+      "lat": 38.75085,
+      "lon": -90.44559
+     },
+     {
+      "instruction": "Continue onto Sheriff Roger I. Wilson Memorial Highway (I 70, US 40)",
+      "miles": 1.96,
+      "lat": 38.9617,
+      "lon": -92.28794
+     },
+     {
+      "instruction": "Continue onto Highway Patrol Sgt. Benjamin Booth Memorial Highway (I 70, US 40)",
+      "miles": 1.56,
+      "lat": 38.96865,
+      "lon": -92.32258
+     },
+     {
+      "instruction": "Continue onto Dwight D. Eisenhower Highway (I 70, US 40)",
+      "miles": 1.82,
+      "lat": 38.96691,
+      "lon": -92.35093
+     },
+     {
+      "instruction": "Continue onto U.S. Submarine Veterans' Memorial Highway (I 70, US 40)",
+      "miles": 54.38,
+      "lat": 38.96974,
+      "lon": -92.38286
+     },
+     {
+      "instruction": "Continue onto Dwight D. Eisenhower Highway (I 70, US 40)",
+      "miles": 52.49,
+      "lat": 38.97481,
+      "lon": -93.36842
+     },
+     {
+      "instruction": "Continue onto Truman/Eisenhower Presidential Highway (I 70)",
+      "miles": 2.65,
+      "lat": 39.03826,
+      "lon": -94.33558
+     },
+     {
+      "instruction": "Continue onto Clifton J. Scott Memorial Highway (I 70)",
+      "miles": 1.81,
+      "lat": 39.04478,
+      "lon": -94.38418
+     },
+     {
+      "instruction": "Continue onto Truman/Eisenhower Presidential Highway (I 70)",
+      "miles": 2.87,
+      "lat": 39.04621,
+      "lon": -94.41774
+     },
+     {
+      "instruction": "Continue onto George Brett Super Highway (I 70)",
+      "miles": 6.82,
+      "lat": 39.05011,
+      "lon": -94.47051
+     },
+     {
+      "instruction": "Keep left onto I 670, I 70 Alt",
+      "miles": 3.85,
+      "lat": 39.09631,
+      "lon": -94.56749
+     },
+     {
+      "instruction": "Merge slight left onto I 70, US 24, US 40, US 69",
+      "miles": 53.78,
+      "lat": 39.09189,
+      "lon": -94.63209
+     },
+     {
+      "instruction": "Keep left onto Kansas Turnpike (I 470)",
+      "miles": 6.67,
+      "lat": 39.03169,
+      "lon": -95.58455
+     },
+     {
+      "instruction": "Take the exit toward I 470 West, US 75: Topeka, Salina",
+      "miles": 0.19,
+      "lat": 38.99168,
+      "lon": -95.68993
+     },
+     {
+      "instruction": "Continue onto Dr. Martin Luther King Jr. Memorial Highway (I 470)",
+      "miles": 6.21,
+      "lat": 38.99283,
+      "lon": -95.69266
+     },
+     {
+      "instruction": "Keep left onto I 470",
+      "miles": 0.8,
+      "lat": 39.04875,
+      "lon": -95.77078
+     },
+     {
+      "instruction": "Merge slight left onto Truman/Eisenhower Presidential Highway (I 70, US 40, KS 4)",
+      "miles": 80.01,
+      "lat": 39.05353,
+      "lon": -95.78185
+     },
+     {
+      "instruction": "Continue onto Dwight D. Eisenhower Highway (I 70, US 40)",
+      "miles": 438.47,
+      "lat": 38.93969,
+      "lon": -97.21703
+     },
+     {
+      "instruction": "Continue onto Tuskegee Airmen Memorial Highway (I 70)",
+      "miles": 3.38,
+      "lat": 39.75796,
+      "lon": -104.76793
+     },
+     {
+      "instruction": "Keep right onto Tuskegee Airmen Memorial Highway (I 70)",
+      "miles": 7.96,
+      "lat": 39.77256,
+      "lon": -104.82786
+     },
+     {
+      "instruction": "Take exit 274 toward I 25: Fort Collins, Colorado Springs",
+      "miles": 0.32,
+      "lat": 39.77969,
+      "lon": -104.97669
+     },
+     {
+      "instruction": "Continue onto Grand Army of the Republic Highway",
+      "miles": 0.83,
+      "lat": 39.78002,
+      "lon": -104.98263
+     },
+     {
+      "instruction": "Keep right",
+      "miles": 0.12,
+      "lat": 39.7747,
+      "lon": -104.99018
+     },
+     {
+      "instruction": "Keep right",
+      "miles": 0.73,
+      "lat": 39.77292,
+      "lon": -104.99051
+     },
+     {
+      "instruction": "Continue straight onto Park Avenue West",
+      "miles": 0.5,
+      "lat": 39.76344,
+      "lon": -104.99502
+     },
+     {
+      "instruction": "Continue onto West 22nd Street",
+      "miles": 0.4,
+      "lat": 39.75674,
+      "lon": -104.99264
+     },
+     {
+      "instruction": "Turn right onto North Broadway",
+      "miles": 0.64,
+      "lat": 39.75266,
+      "lon": -104.98739
+     },
+     {
+      "instruction": "Turn left onto East 17th Avenue",
+      "miles": 0.14,
+      "lat": 39.74336,
+      "lon": -104.9874
+     },
+     {
+      "instruction": "Turn right onto Sherman Street",
+      "miles": 0.23,
+      "lat": 39.74327,
+      "lon": -104.98485
+     },
+     {
+      "instruction": "Turn right",
+      "miles": 0.06,
+      "lat": 39.73989,
+      "lon": -104.98486
+     },
+     {
+      "instruction": "Arrive at the drop-off",
+      "miles": 0.0,
+      "lat": 39.73921,
+      "lon": -104.98549
+     }
+    ]
+   }
+  ]
+ },
+ "logs": [
+  {
+   "date": "2026-10-05",
+   "starts_at": "2026-10-05T00:00-05:00",
+   "segments": [
+    {
+     "status": "off_duty",
+     "start": 0,
+     "end": 420
+    },
+    {
+     "status": "on_duty",
+     "start": 420,
+     "end": 450
+    },
+    {
+     "status": "driving",
+     "start": 450,
+     "end": 667
+    },
+    {
+     "status": "on_duty",
+     "start": 667,
+     "end": 727
+    },
+    {
+     "status": "driving",
+     "start": 727,
+     "end": 1170
+    },
+    {
+     "status": "sleeper_berth",
+     "start": 1170,
+     "end": 1440
+    }
+   ],
+   "totals_min": {
+    "off_duty": 420,
+    "sleeper_berth": 270,
+    "driving": 660,
+    "on_duty": 90
+   },
+   "totals_hm": {
+    "off_duty": "7:00",
+    "sleeper_berth": "4:30",
+    "driving": "11:00",
+    "on_duty": "1:30"
+   },
+   "on_duty_hours": 12.5,
+   "miles_today": 586.5,
+   "from": "Chicago, IL",
+   "to": "near Marshall, MO",
+   "remarks": [
+    {
+     "minute": 420,
+     "time": "07:00",
+     "status": "on_duty",
+     "label": "Pre-trip inspection",
+     "place": "Chicago, IL",
+     "mile": 0.0,
+     "reasons": []
+    },
+    {
+     "minute": 450,
+     "time": "07:30",
+     "status": "driving",
+     "label": "Driving",
+     "place": "Chicago, IL",
+     "mile": 0.0,
+     "reasons": []
+    },
+    {
+     "minute": 667,
+     "time": "11:07",
+     "status": "on_duty",
+     "label": "Pickup",
+     "place": "Indianapolis, IN",
+     "mile": 180.7,
+     "reasons": []
+    },
+    {
+     "minute": 727,
+     "time": "12:07",
+     "status": "driving",
+     "label": "Driving",
+     "place": "Indianapolis, IN",
+     "mile": 180.7,
+     "reasons": []
+    },
+    {
+     "minute": 1170,
+     "time": "19:30",
+     "status": "sleeper_berth",
+     "label": "10-hour rest",
+     "place": "near Marshall, MO",
+     "mile": 586.5,
+     "reasons": [
+      "driving_limit"
+     ]
+    }
+   ],
+   "brackets": [
+    {
+     "start": 420,
+     "end": 450,
+     "place": "Chicago, IL"
+    },
+    {
+     "start": 667,
+     "end": 727,
+     "place": "Indianapolis, IN"
+    },
+    {
+     "start": 1170,
+     "end": 1440,
+     "place": "near Marshall, MO"
+    }
+   ],
+   "recap": {
+    "on_duty_today_min": 750,
+    "cycle_used_min": 1950,
+    "available_tomorrow_min": 2250,
+    "approximate": true
+   }
+  },
+  {
+   "date": "2026-10-06",
+   "starts_at": "2026-10-06T00:00-05:00",
+   "segments": [
+    {
+     "status": "sleeper_berth",
+     "start": 0,
+     "end": 330
+    },
+    {
+     "status": "on_duty",
+     "start": 330,
+     "end": 360
+    },
+    {
+     "status": "driving",
+     "start": 360,
+     "end": 811
+    },
+    {
+     "status": "on_duty",
+     "start": 811,
+     "end": 841
+    },
+    {
+     "status": "driving",
+     "start": 841,
+     "end": 1050
+    },
+    {
+     "status": "sleeper_berth",
+     "start": 1050,
+     "end": 1440
+    }
+   ],
+   "totals_min": {
+    "off_duty": 0,
+    "sleeper_berth": 720,
+    "driving": 660,
+    "on_duty": 60
+   },
+   "totals_hm": {
+    "off_duty": "0:00",
+    "sleeper_berth": "12:00",
+    "driving": "11:00",
+    "on_duty": "1:00"
+   },
+   "on_duty_hours": 12.0,
+   "miles_today": 604.6,
+   "from": "near Marshall, MO",
+   "to": "near Limon, CO",
+   "remarks": [
+    {
+     "minute": 330,
+     "time": "05:30",
+     "status": "on_duty",
+     "label": "Pre-trip inspection",
+     "place": "near Marshall, MO",
+     "mile": 586.5,
+     "reasons": []
+    },
+    {
+     "minute": 360,
+     "time": "06:00",
+     "status": "driving",
+     "label": "Driving",
+     "place": "near Marshall, MO",
+     "mile": 586.5,
+     "reasons": []
+    },
+    {
+     "minute": 811,
+     "time": "13:31",
+     "status": "on_duty",
+     "label": "Fuel",
+     "place": "near Oakley, KS",
+     "mile": 999.7,
+     "reasons": [
+      "fuel_interval"
+     ]
+    },
+    {
+     "minute": 841,
+     "time": "14:01",
+     "status": "driving",
+     "label": "Driving",
+     "place": "near Oakley, KS",
+     "mile": 999.7,
+     "reasons": []
+    },
+    {
+     "minute": 1050,
+     "time": "17:30",
+     "status": "sleeper_berth",
+     "label": "10-hour rest",
+     "place": "near Limon, CO",
+     "mile": 1191.1,
+     "reasons": [
+      "driving_limit"
+     ]
+    }
+   ],
+   "brackets": [
+    {
+     "start": 0,
+     "end": 360,
+     "place": "near Marshall, MO"
+    },
+    {
+     "start": 811,
+     "end": 841,
+     "place": "near Oakley, KS"
+    },
+    {
+     "start": 1050,
+     "end": 1440,
+     "place": "near Limon, CO"
+    }
+   ],
+   "recap": {
+    "on_duty_today_min": 720,
+    "cycle_used_min": 2670,
+    "available_tomorrow_min": 1530,
+    "approximate": true
+   }
+  },
+  {
+   "date": "2026-10-07",
+   "starts_at": "2026-10-07T00:00-05:00",
+   "segments": [
+    {
+     "status": "sleeper_berth",
+     "start": 0,
+     "end": 210
+    },
+    {
+     "status": "on_duty",
+     "start": 210,
+     "end": 240
+    },
+    {
+     "status": "driving",
+     "start": 240,
+     "end": 324
+    },
+    {
+     "status": "on_duty",
+     "start": 324,
+     "end": 384
+    },
+    {
+     "status": "off_duty",
+     "start": 384,
+     "end": 1440
+    }
+   ],
+   "totals_min": {
+    "off_duty": 1056,
+    "sleeper_berth": 210,
+    "driving": 84,
+    "on_duty": 90
+   },
+   "totals_hm": {
+    "off_duty": "17:36",
+    "sleeper_berth": "3:30",
+    "driving": "1:24",
+    "on_duty": "1:30"
+   },
+   "on_duty_hours": 2.9,
+   "miles_today": 76.9,
+   "from": "near Limon, CO",
+   "to": "Denver, CO",
+   "remarks": [
+    {
+     "minute": 210,
+     "time": "03:30",
+     "status": "on_duty",
+     "label": "Pre-trip inspection",
+     "place": "near Limon, CO",
+     "mile": 1191.1,
+     "reasons": []
+    },
+    {
+     "minute": 240,
+     "time": "04:00",
+     "status": "driving",
+     "label": "Driving",
+     "place": "near Limon, CO",
+     "mile": 1191.1,
+     "reasons": []
+    },
+    {
+     "minute": 324,
+     "time": "05:24",
+     "status": "on_duty",
+     "label": "Drop-off",
+     "place": "Denver, CO",
+     "mile": 1268.1,
+     "reasons": []
+    },
+    {
+     "minute": 384,
+     "time": "06:24",
+     "status": "off_duty",
+     "label": "Off duty",
+     "place": "Denver, CO",
+     "mile": 1268.1,
+     "reasons": []
+    }
+   ],
+   "brackets": [
+    {
+     "start": 0,
+     "end": 240,
+     "place": "near Limon, CO"
+    },
+    {
+     "start": 324,
+     "end": 384,
+     "place": "Denver, CO"
+    }
+   ],
+   "recap": {
+    "on_duty_today_min": 174,
+    "cycle_used_min": 2844,
+    "available_tomorrow_min": 1356,
+    "approximate": true
+   }
+  }
+ ],
+ "log_header": {
+  "time_zone": "America/Chicago",
+  "utc_offset": "-05:00"
+ }
+}

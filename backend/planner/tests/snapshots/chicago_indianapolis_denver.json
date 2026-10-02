@@ -1,0 +1,38 @@
+{
+  "summary": {
+    "from": "Chicago, IL",
+    "pickup": "Indianapolis, IN",
+    "dropoff": "Denver, CO",
+    "total_miles": 1268.1,
+    "driving": "23:24",
+    "elapsed": "47:24",
+    "pickup_arrival": "2026-10-05T11:07-05:00",
+    "dropoff_arrival": "2026-10-07T05:24-05:00",
+    "stop_counts": {
+      "pre_trip": 3,
+      "pickup": 1,
+      "dropoff": 1,
+      "fuel": 1,
+      "break": 0,
+      "rest": 2,
+      "restart": 0
+    },
+    "restart_needed": false,
+    "sheets": 3
+  },
+  "stops": [
+    "2026-10-05T07:00  pre_trip mile     0.0  Chicago, IL",
+    "2026-10-05T11:07  pickup   mile   180.7  Indianapolis, IN",
+    "2026-10-05T19:30  rest     mile   586.5  near Marshall, MO  [driving_limit]",
+    "2026-10-06T05:30  pre_trip mile   586.5  near Marshall, MO",
+    "2026-10-06T13:31  fuel     mile   999.7  near Oakley, KS  [fuel_interval]",
+    "2026-10-06T17:30  rest     mile  1191.1  near Limon, CO  [driving_limit]",
+    "2026-10-07T03:30  pre_trip mile  1191.1  near Limon, CO",
+    "2026-10-07T05:24  dropoff  mile  1268.1  Denver, CO"
+  ],
+  "sheets": [
+    "2026-10-05  off  7:00  sb  4:30  dr 11:00  on  1:30   586.5 mi  recap A 32.50 h",
+    "2026-10-06  off  0:00  sb 12:00  dr 11:00  on  1:00   604.6 mi  recap A 44.50 h",
+    "2026-10-07  off 17:36  sb  3:30  dr  1:24  on  1:30    76.9 mi  recap A 47.40 h"
+  ]
+}

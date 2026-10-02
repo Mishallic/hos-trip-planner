@@ -10,7 +10,7 @@
 - [x] log builder (daily totals = 24h)
 - [x] osrm + photon, restrict to US/CA/MX
 - [x] POST /api/trips/plan + error codes
-- [ ] api tests
+- [x] api tests
 
 ## UI
 - [ ] theme + app shell

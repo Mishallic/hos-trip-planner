@@ -1,0 +1,44 @@
+{
+  "summary": {
+    "from": "Los Angeles, CA",
+    "pickup": "Phoenix, AZ",
+    "dropoff": "Atlanta, GA",
+    "total_miles": 2180.2,
+    "driving": "39:39",
+    "elapsed": "99:09",
+    "pickup_arrival": "2026-10-05T14:17-07:00",
+    "dropoff_arrival": "2026-10-09T09:09-07:00",
+    "stop_counts": {
+      "pre_trip": 4,
+      "pickup": 1,
+      "dropoff": 1,
+      "fuel": 2,
+      "break": 1,
+      "rest": 2,
+      "restart": 1
+    },
+    "restart_needed": true,
+    "sheets": 5
+  },
+  "stops": [
+    "2026-10-05T07:00  pre_trip mile     0.0  Los Angeles, CA",
+    "2026-10-05T14:17  pickup   mile   372.6  Phoenix, AZ",
+    "2026-10-05T19:30  restart  mile   604.5  near Houck, AZ  [cycle_limit]",
+    "2026-10-07T05:30  pre_trip mile   604.5  near Houck, AZ",
+    "2026-10-07T13:11  fuel     mile   999.6  near Tucumcari, NM  [fuel_interval]",
+    "2026-10-07T17:30  rest     mile  1209.5  Sayre, OK  [driving_limit]",
+    "2026-10-08T03:30  pre_trip mile  1209.5  Sayre, OK",
+    "2026-10-08T12:00  break    mile  1649.5  Mayflower, AR  [break_required]",
+    "2026-10-08T15:30  fuel     mile  1814.5  Olive Branch, MS  [fuel_interval]",
+    "2026-10-08T16:00  rest     mile  1814.5  Olive Branch, MS  [driving_limit]",
+    "2026-10-09T02:00  pre_trip mile  1814.5  Olive Branch, MS",
+    "2026-10-09T09:09  dropoff  mile  2180.2  Atlanta, GA"
+  ],
+  "sheets": [
+    "2026-10-05  off 11:30  sb  0:00  dr 11:00  on  1:30   604.5 mi  recap A 64.50 h",
+    "2026-10-06  off 24:00  sb  0:00  dr  0:00  on  0:00     0.0 mi  recap A 64.50 h",
+    "2026-10-07  off  5:30  sb  6:30  dr 11:00  on  1:00   605.0 mi  recap A 12.00 h",
+    "2026-10-08  off  0:30  sb 11:30  dr 11:00  on  1:00   605.0 mi  recap A 24.00 h",
+    "2026-10-09  off 13:51  sb  2:00  dr  6:39  on  1:30   365.7 mi  recap A 32.15 h"
+  ]
+}

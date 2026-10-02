@@ -1,0 +1,31 @@
+{
+  "summary": {
+    "from": "Dallas, TX",
+    "pickup": "Fort Worth, TX",
+    "dropoff": "Houston, TX",
+    "total_miles": 294.0,
+    "driving": "5:27",
+    "elapsed": "7:57",
+    "pickup_arrival": "2026-10-05T08:11-05:00",
+    "dropoff_arrival": "2026-10-05T13:57-05:00",
+    "stop_counts": {
+      "pre_trip": 1,
+      "pickup": 1,
+      "dropoff": 1,
+      "fuel": 0,
+      "break": 0,
+      "rest": 0,
+      "restart": 0
+    },
+    "restart_needed": false,
+    "sheets": 1
+  },
+  "stops": [
+    "2026-10-05T07:00  pre_trip mile     0.0  Dallas, TX",
+    "2026-10-05T08:11  pickup   mile    32.3  Fort Worth, TX",
+    "2026-10-05T13:57  dropoff  mile   294.0  Houston, TX"
+  ],
+  "sheets": [
+    "2026-10-05  off 16:03  sb  0:00  dr  5:27  on  2:30   294.0 mi  recap A 15.95 h"
+  ]
+}
