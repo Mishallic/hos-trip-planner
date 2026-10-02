@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://hos-trip-planner-api.vercel.app/api/:path*"
+      "destination": "https://hos-trip-planner-api-sigma.vercel.app/api/:path*"
     }
   ]
 }
