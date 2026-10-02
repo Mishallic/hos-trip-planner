@@ -167,7 +167,7 @@ def test_golden_trip(trip):
         fixture_file.write_bytes(gzip.compress(raw, compresslevel=9, mtime=0))
     if RECORD or UPDATE:
         SNAPSHOTS.mkdir(parents=True, exist_ok=True)
-        snapshot_file.write_text(json.dumps(result, indent=2) + "\n", "utf-8")
+        snapshot_file.write_bytes((json.dumps(result, indent=2) + "\n").encode())  # LF only
 
     expected = json.loads(snapshot_file.read_text(encoding="utf-8"))
     assert result == expected

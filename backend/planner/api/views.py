@@ -1,4 +1,5 @@
 import platform
+from time import perf_counter
 
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.request import Request
@@ -23,9 +24,16 @@ def health(request: Request) -> Response:
 @api_view(["POST"])
 @throttle_classes([ScopedRateThrottle])
 def plan_trip(request: Request) -> Response:
+    started = perf_counter()
     serializer = PlanRequestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    return Response(trip_planning.plan(serializer.to_plan_request(), get_providers()))
+    timings: dict[str, float] = {}
+    plan = trip_planning.plan(serializer.to_plan_request(), get_providers(), timings=timings)
+    timings["total"] = (perf_counter() - started) * 1000
+    response = Response(plan)
+    # Shows in the browser's network panel: where a slow plan spends its time.
+    response["Server-Timing"] = ", ".join(f"{name};dur={ms:.1f}" for name, ms in timings.items())
+    return response
 
 
 @api_view(["GET"])

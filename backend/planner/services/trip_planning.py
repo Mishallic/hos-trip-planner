@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from functools import cache
+from time import perf_counter
 from zoneinfo import ZoneInfo
 
 from planner.domain.clocks import clocks_before_each_event
@@ -121,7 +122,14 @@ def _search(query: str, providers: Providers) -> list[Place]:
     return places
 
 
-def plan(request: PlanRequest, providers: Providers, policy: HOSPolicy = DEFAULT_POLICY) -> dict:
+def plan(
+    request: PlanRequest,
+    providers: Providers,
+    policy: HOSPolicy = DEFAULT_POLICY,
+    timings: dict[str, float] | None = None,
+) -> dict:
+    """The full plan. If `timings` is given, it receives each stage's milliseconds."""
+    clock = _StageClock(timings)
     # Looked up in parallel: each text search waits about a second on the service.
     fields = (
         ("current", request.current),
@@ -130,10 +138,12 @@ def plan(request: PlanRequest, providers: Providers, policy: HOSPolicy = DEFAULT
     )
     with ThreadPoolExecutor(max_workers=3) as pool:
         current, pickup, dropoff = pool.map(lambda f: _resolve(*f, providers), fields)
+    clock.lap("geocode")
     try:
         route = providers.router.route(current, pickup, dropoff)
     except Unroutable as exc:
         raise FieldError("route", exc.code, "No road route connects these places.") from exc
+    clock.lap("route")
 
     tz_name = request.home_tz or providers.timezone_at(current.lat, current.lon)
     start = request.start_time or providers.now(ZoneInfo(tz_name)).replace(tzinfo=None)
@@ -169,7 +179,7 @@ def plan(request: PlanRequest, providers: Providers, policy: HOSPolicy = DEFAULT
     def at(minutes: int) -> str:
         return (start_at + timedelta(minutes=minutes)).isoformat(timespec="minutes")
 
-    return {
+    response = {
         "summary": _summary(events, legs, logs, at, current, pickup, dropoff),
         "stops": _stops(events, clocks, at, place_at, policy),
         "timeline": _timeline(events, clocks, at),
@@ -181,6 +191,20 @@ def plan(request: PlanRequest, providers: Providers, policy: HOSPolicy = DEFAULT
             "utc_offset": start_at.isoformat()[-6:],  # e.g. "-05:00"
         },
     }
+    clock.lap("compute")  # time zone, engine, clocks, logs, stop names, response
+    return response
+
+
+class _StageClock:
+    def __init__(self, timings: dict[str, float] | None) -> None:
+        self.timings = timings
+        self.last = perf_counter()
+
+    def lap(self, stage: str) -> None:
+        now = perf_counter()
+        if self.timings is not None:
+            self.timings[stage] = (now - self.last) * 1000
+        self.last = now
 
 
 def _resolve(field_name: str, given: PlaceInput, providers: Providers) -> Place:

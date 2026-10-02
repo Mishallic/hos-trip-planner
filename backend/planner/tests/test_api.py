@@ -172,6 +172,15 @@ class TestPlan:
         assert header["truck"] == "1042"
         assert header["utc_offset"] == "-05:00"
 
+    def test_server_timing_reports_each_stage(self, client, use):
+        use(providers())
+
+        header = post_plan(client, plan_body())["Server-Timing"]
+
+        stages = dict(part.split(";dur=") for part in header.split(", "))
+        assert list(stages) == ["geocode", "route", "compute", "total"]
+        assert all(float(ms) >= 0 for ms in stages.values())
+
     def test_coordinates_are_rounded_and_the_line_stays_encoded(self, client, use):
         use(providers())
 
