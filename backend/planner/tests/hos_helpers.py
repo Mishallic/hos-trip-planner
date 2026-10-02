@@ -21,13 +21,19 @@ def plan(
 ) -> list[Event]:
     trip = TripInput(leg(to_pickup_min), leg(to_dropoff_min), cycle_used_min)
     events = plan_trip(trip, policy)
+    check_all(events, trip, policy)
+    return events
+
+
+def check_all(events: list[Event], trip: TripInput, policy: HOSPolicy) -> None:
+    """Every independent check: the timeline's shape and each rule, from events alone."""
     assert_well_formed(events, trip)
-    assert_driving_limits_hold(events, policy)
+    assert_driving_limits_hold(events, policy)  # 11-hour limit and 14-hour window
     assert_break_rule_holds(events, policy)
-    assert_cycle_rule_holds(events, policy, cycle_used_min)
+    assert_cycle_rule_holds(events, policy, trip.cycle_used_min)
     assert_pre_trip_rule_holds(events, policy)
     assert_fuel_rule_holds(events, policy)
-    return events
+    assert_stops_have_their_lengths(events, policy)
 
 
 def timeline(events: list[Event]) -> list[tuple[str, int, int]]:
@@ -160,3 +166,23 @@ def assert_fuel_rule_holds(events: list[Event], policy: HOSPolicy) -> None:
             since_fuel = 0.0
         since_fuel += event.end_mile - event.start_mile
         assert since_fuel <= policy.fuel_interval_miles + 1e-6, f"tank ran dry at {event}"
+
+
+def assert_stops_have_their_lengths(events: list[Event], policy: HOSPolicy) -> None:
+    """Every stop lasts exactly its policy length.
+
+    The rule checks above pass for a plan that stops longer than needed. This one
+    catches a stop that was too short to count and had to be repeated.
+    """
+    lengths = {
+        Activity.PRE_TRIP: policy.pre_trip_min,
+        Activity.PICKUP: policy.pickup_min,
+        Activity.DROPOFF: policy.dropoff_min,
+        Activity.FUEL: policy.fuel_stop_min,
+        Activity.BREAK: policy.break_min,
+        Activity.REST: policy.daily_rest_min,
+        Activity.RESTART: policy.restart_min,
+    }
+    for event in events:
+        if event.activity is not Activity.DRIVING:
+            assert event.duration_min == lengths[event.activity], f"wrong length: {event}"
