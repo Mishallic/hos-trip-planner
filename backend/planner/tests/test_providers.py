@@ -6,8 +6,6 @@ HOS_LIVE_PROVIDERS environment variable is set, and never in CI.
 
 import json
 import os
-import threading
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -16,11 +14,12 @@ import pytest
 
 from planner.domain.geometry import RoutePath, decode_polyline, haversine_miles
 from planner.providers.base import NotFound, Place, Unroutable, UpstreamUnavailable
-from planner.providers.geocoding import CityLookup, FallbackGeocoder
+from planner.providers.geocoding import FallbackGeocoder
 from planner.providers.http import USER_AGENT, make_client
 from planner.providers.nominatim import NominatimGeocoder
 from planner.providers.osrm import OsrmRouter, instruction
 from planner.providers.photon import PhotonGeocoder
+from planner.providers.places import nearest_town
 from planner.providers.regions import region_code
 from planner.providers.timezones import timezone_at, utc_offset_min
 
@@ -252,21 +251,6 @@ class TestPhotonSearch:
             geocoder.search("Dallas")
 
 
-class TestPhotonReverse:
-    @pytest.mark.parametrize(
-        ("name", "expected"),
-        [
-            ("photon_reverse_joliet", "Joliet, IL"),
-            ("photon_reverse_rural_i80", "Ogallala, NE"),
-            ("photon_reverse_monterrey", "Monterrey, NLE"),
-        ],
-    )
-    def test_city_and_state_code(self, name, expected):
-        geocoder, _ = photon(fixture(name))
-
-        assert geocoder.city_state(0, 0) == expected
-
-
 class TestNominatim:
     def test_search_asks_for_us_ca_mx_only(self):
         replay = Replay(fixture("nominatim_search_dallas"))
@@ -310,96 +294,6 @@ class TestFallbackGeocoder:
         primary, fallback = FakeGeocoder([]), FakeGeocoder(self.DALLAS)
 
         assert FallbackGeocoder(primary, fallback).search("Dallas") == self.DALLAS
-
-
-class DictCache:
-    def __init__(self) -> None:
-        self.data: dict[str, object] = {}
-
-    def get(self, key):
-        return self.data.get(key)
-
-    def set(self, key, value, timeout):
-        self.data[key] = value
-
-
-class FakeReverse:
-    """Answers "lat,lon" after a short wait, and records the busiest moment."""
-
-    def __init__(self, fail_at: set | None = None) -> None:
-        self.calls: list[tuple[float, float]] = []
-        self.active = self.peak = 0
-        self.lock = threading.Lock()
-        self.fail_at = fail_at or set()
-
-    def city_state(self, lat, lon):
-        with self.lock:
-            self.calls.append((lat, lon))
-            self.active += 1
-            self.peak = max(self.peak, self.active)
-        time.sleep(0.02)
-        with self.lock:
-            self.active -= 1
-        if (lat, lon) in self.fail_at:
-            raise UpstreamUnavailable("down")
-        return f"{lat},{lon}"
-
-
-class TestCityLookup:
-    def test_nearby_points_and_duplicates_share_one_lookup(self):
-        reverse = FakeReverse()
-        lookup = CityLookup(reverse, DictCache())
-
-        # Both points round to the same 0.01-degree cell, about 300 m apart.
-        cities = lookup.cities([(41.5212, -88.0817), (41.5241, -88.0789), (41.5212, -88.0817)])
-
-        assert reverse.calls == [(41.52, -88.08)]
-        assert cities == ["41.52,-88.08"] * 3
-
-    def test_cached_points_are_not_looked_up_again(self):
-        reverse, cache = FakeReverse(), DictCache()
-        CityLookup(reverse, cache).cities([(41.5, -88.0)])
-
-        CityLookup(reverse, cache).cities([(41.5, -88.0), (41.5, -88.0)])
-
-        assert len(reverse.calls) == 1
-
-    def test_lookups_per_plan_are_capped(self):
-        reverse = FakeReverse()
-        points = [(40.0 + i / 10, -90.0) for i in range(10)]
-
-        cities = CityLookup(reverse, DictCache(), max_lookups=4).cities(points)
-
-        assert len(reverse.calls) == 4
-        assert cities[4:] == [None] * 6
-
-    def test_only_a_few_requests_run_at_once(self):
-        reverse = FakeReverse()
-        points = [(40.0 + i / 10, -90.0) for i in range(12)]
-
-        CityLookup(reverse, DictCache(), max_workers=3).cities(points)
-
-        assert reverse.peak <= 3
-        assert len(reverse.calls) == 12
-
-    def test_a_failed_lookup_gives_none_and_is_retried_next_time(self):
-        reverse, cache = FakeReverse(fail_at={(41.5, -88.0)}), DictCache()
-
-        assert CityLookup(reverse, cache).cities([(41.5, -88.0)]) == [None]
-        reverse.fail_at.clear()
-        assert CityLookup(reverse, cache).cities([(41.5, -88.0)]) == ["41.5,-88.0"]
-
-    def test_a_point_with_no_city_is_cached_too(self):
-        class NoCity(FakeReverse):
-            def city_state(self, lat, lon):
-                super().city_state(lat, lon)
-                return None
-
-        reverse, cache = NoCity(), DictCache()
-        CityLookup(reverse, cache).cities([(41.5, -88.0)])
-
-        assert CityLookup(reverse, cache).cities([(41.5, -88.0)]) == [None]
-        assert len(reverse.calls) == 1
 
 
 class TestRegions:
@@ -448,7 +342,7 @@ class TestLiveServices:
 
         route = OsrmRouter(client).route(JOLIET, CHICAGO, GARY)
         dallas = PhotonGeocoder(client).search("Dallas")[0]
-        city = PhotonGeocoder(client).city_state(JOLIET.lat, JOLIET.lon)
+        city = nearest_town().city_state(JOLIET.lat, JOLIET.lon)  # offline
 
         assert route.to_pickup.distance_miles > 30
         assert dallas.label == "Dallas, TX"

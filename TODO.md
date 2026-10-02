@@ -21,6 +21,7 @@
 - [ ] log sheet: remarks flags, brackets, totals, recap
 - [ ] day tabs + print
 - [ ] loading / error / empty states, mobile
+- [ ] footer credit: GeoNames (CC BY 4.0), OpenStreetMap contributors
 
 ## Ship
 - [ ] smoke test on prod (short, multi-day, restart, bad input)

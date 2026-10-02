@@ -78,7 +78,8 @@ class Geocoder(Protocol):
 
 class ReverseGeocoder(Protocol):
     def city_state(self, lat: float, lon: float) -> str | None:
-        """ "Joliet, IL" for a point, or None if there is no usable answer."""
+        """ "Joliet, IL" or "near Colorado City, TX" for a point, or None if no
+        place is within reach."""
         ...
 
 

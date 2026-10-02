@@ -1,4 +1,7 @@
-"""Place search and reverse geocoding with Photon (komoot), limited to the US, CA and MX."""
+"""Place search with Photon (komoot), limited to the US, Canada and Mexico.
+
+Stop names come from the offline nearest-town lookup (places.py), not from here.
+"""
 
 import time
 from collections.abc import Callable
@@ -13,7 +16,6 @@ DEFAULT_URL = "https://photon.komoot.io"
 SERVICE = "Photon"
 # West, south, east, north: North America, so "Texas" never means Queensland.
 NORTH_AMERICA_BBOX = "-170,14,-50,72"
-CITY_TYPES = {"city", "town", "village", "hamlet", "locality", "district"}
 
 
 class PhotonGeocoder:
@@ -32,14 +34,6 @@ class PhotonGeocoder:
         features = self._features("/api/", params)
         places = [_place(f) for f in features if is_supported(_props(f).get("countrycode"))]
         return places[:limit]
-
-    def city_state(self, lat: float, lon: float) -> str | None:
-        features = self._features("/reverse", {"lat": lat, "lon": lon, "lang": "en"})
-        for feature in features:
-            props = _props(feature)
-            if is_supported(props.get("countrycode")):
-                return city_state(props)
-        return None
 
     def _features(self, path: str, params: dict) -> list[dict]:
         response = http.get(self.client, f"{self.base_url}{path}", params, SERVICE, self.sleep)
@@ -80,25 +74,3 @@ def _label(props: dict) -> str:
     if country != "US" and country in COUNTRIES:
         parts.append(COUNTRIES[country])
     return ", ".join(p for p in parts if p)
-
-
-def city_state(props: dict) -> str | None:
-    """ "Joliet, IL" from Photon or Nominatim address parts, as written in remarks."""
-    country = (props.get("countrycode") or props.get("country_code") or "").upper()
-    city = next(
-        (
-            props.get(key)
-            for key in ("city", "town", "village", "hamlet", "locality")
-            if props.get(key)
-        ),
-        None,
-    )
-    if not city and props.get("type") in CITY_TYPES:
-        city = props.get("name")
-    if not city and props.get("county"):
-        county = props["county"]
-        city = county if "county" in county.lower() else f"{county} County"
-    state = region_code(props.get("state"), country)
-    if not city:
-        return state
-    return f"{city}, {state}" if state else city

@@ -54,6 +54,14 @@ choices. Code and tests cite them as D1, D2, ...
 | D15 | When a break comes due and the next fuel stop would be due within the next hour of driving, the driver fuels then instead. The fuel stop counts as the break (D9), so there is one stop, not two. |
 | D16 | Just before a 10-hour rest or 34-hour restart, the driver fuels if the trip needs more fuel, the tank won't last the next full shift, fuelling now doesn't add a fuel stop to the rest of the trip, and the fuel stop it replaces would not have doubled as the next shift's 30-minute break (D9). It never adds a fuel stop or lengthens the trip. Fuel still comes at or before every 1,000 miles. |
 | D17 | Log sheets use the home terminal's UTC offset at the trip start for the whole trip, so every sheet is exactly 24 hours, with no 23- or 25-hour days at a daylight-saving change. |
+| D18 | Remarks name each stop after the nearest place with at least 1,000 people, as "City, ST" (guide p. 17). When that place is more than 5 miles away the remark reads "near City, ST". The lookup is offline, so planning never waits on a geocoding service. |
+
+## Data and services
+
+- Routing: [OSRM](https://project-osrm.org) public demo server.
+- Place search: [Photon](https://photon.komoot.io) by komoot, with [Nominatim](https://nominatim.org) as a fallback. Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.
+- Stop names: place data from [GeoNames](https://www.geonames.org), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `backend/scripts/build_places.py` builds the bundled file (`places_us_ca_mx.tsv.gz`) from GeoNames `cities1000`, keeping places in the US, Canada and Mexico with at least 1,000 people.
+- Time zones: [timezonefinder](https://github.com/jannikmi/timezonefinder), offline.
 
 ## Run locally
 
