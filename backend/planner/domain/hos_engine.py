@@ -14,6 +14,10 @@ from .policy import DEFAULT_POLICY, HOSPolicy
 
 OFF_STATUSES = frozenset({DutyStatus.OFF_DUTY, DutyStatus.SLEEPER_BERTH})
 EPSILON = 1e-9  # float slack when converting miles to whole minutes
+# A legitimate plan needs at most 3 stops in a row before driving again (say rest,
+# pre-trip, fuel). More than this means no stop is freeing the clocks: fail loudly
+# instead of looping forever.
+MAX_STOPS_WITHOUT_DRIVING = 10
 
 
 def plan_trip(trip: TripInput, policy: HOSPolicy = DEFAULT_POLICY) -> list[Event]:
@@ -84,7 +88,12 @@ class _Scheduler:
         driven_min = 0
         if leg.drive_min:
             self.miles_per_min = leg.distance_miles / leg.drive_min
+        stops_in_a_row = 0
         while driven_min < leg.drive_min:
+            if stops_in_a_row > MAX_STOPS_WITHOUT_DRIVING:
+                raise RuntimeError(f"no stop lets driving resume at minute {self.now}")
+            stops_in_a_row += 1
+
             if self.policy.pre_trip_min and not self.clocks.pre_trip_done:
                 # D4: inspect before the first drive of each duty period, unless a limit
                 # would leave no driving time after it; that stop then comes first.
@@ -108,6 +117,7 @@ class _Scheduler:
                 )
                 continue
 
+            stops_in_a_row = 0
             step_min = min(leg.drive_min - driven_min, allowed_min, fuel_in_min)
             driven_min += step_min
             self.drive_left_min -= step_min

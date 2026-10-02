@@ -508,3 +508,12 @@ def test_default_policy_is_used_when_none_is_given():
     trip = TripInput(leg(6 * H), leg(6 * H), cycle_used_min=0)
 
     assert plan_trip(trip) == plan_trip(trip, DEFAULT_POLICY)
+
+
+def test_a_plan_that_can_never_drive_fails_instead_of_looping():
+    # No driving time at all, so no rest ever frees the clocks.
+    stuck = replace(LIMITS_ONLY, max_driving_min=0)
+    trip = TripInput(leg(0), leg(60), cycle_used_min=0)
+
+    with pytest.raises(RuntimeError, match="no stop lets driving resume"):
+        plan_trip(trip, stuck)
