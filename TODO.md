@@ -7,7 +7,7 @@
 - [x] hos: 11h / 14h / 30min break / 70h + 34h restart
 - [x] hos: fuel, pickup/dropoff, pre-trip
 - [x] property test + fix what it finds
-- [ ] log builder (daily totals = 24h)
+- [x] log builder (daily totals = 24h)
 - [ ] osrm + photon, restrict to US/CA/MX
 - [ ] POST /api/trips/plan + error codes
 - [ ] api tests
