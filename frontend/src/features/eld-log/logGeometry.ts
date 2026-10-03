@@ -159,3 +159,84 @@ export function stopOnSheet(
 function num(value: number): string {
   return String(Math.round(value * 100) / 100)
 }
+
+/** The remarks band under the grid: a tick row, brackets and 45-degree flags. */
+export const REMARKS = {
+  /** Flags closer than this (in SVG units) are spread apart so their text never overlaps. */
+  minFlagGap: 22,
+  /** Longest flag text before it is cut with an ellipsis. */
+  maxFlagChars: 60,
+  /** Average width of a flag character at 11.5 px, for the reach estimate. */
+  charWidth: 6.5,
+}
+
+export interface Bracket {
+  start: number
+  end: number
+  x1: number
+  x2: number
+}
+
+export interface Flag {
+  /** Where the flag's leader leaves the bracket (its middle) and where its text starts. */
+  anchorX: number
+  x: number
+  text: string
+}
+
+interface RemarkLike {
+  minute: number
+  status: DutyStatus
+  label: string
+  place: string | null
+}
+
+/**
+ * Brackets under every stretch where the truck stood still, and one flag per
+ * bracket naming the place and what happened there (guide p. 18, the video).
+ * `carried` is the last remark of the days before, for a stretch that began then.
+ */
+export function remarkLayout(
+  log: Pick<DailyLog, 'brackets' | 'remarks'>,
+  carried?: RemarkLike,
+): { brackets: Bracket[]; flags: Flag[] } {
+  const brackets = log.brackets.map((b) => ({ start: b.start, end: b.end, x1: minuteX(b.start), x2: minuteX(b.end) }))
+  const flags: Flag[] = log.brackets.map((bracket, i) => {
+    const inside = log.remarks.filter((r) => r.minute >= bracket.start && r.minute < bracket.end && r.status !== 'driving')
+    const today = [...new Set(inside.flatMap((r) => r.label.split(', ')))]
+    // A stretch that began on an earlier day and has nothing new today is named
+    // after that day's stop. When today brings its own stops, they say enough.
+    const continued = carried && bracket.start === 0 && today.length === 0
+    const activities = (continued ? [`${carried.label} (continued)`] : today).join(', ')
+    const place = bracket.place ?? inside[0]?.place ?? carried?.place ?? null
+    return { anchorX: (brackets[i].x1 + brackets[i].x2) / 2, x: 0, text: flagText(place, activities) }
+  })
+  // Spread flags apart left to right, then pull late ones back so their text ends
+  // inside the sheet, keeping the gaps from right to left.
+  flags.forEach((flag, i) => {
+    flag.x = i ? Math.max(flag.anchorX, flags[i - 1].x + REMARKS.minFlagGap) : flag.anchorX
+  })
+  for (let i = flags.length - 1; i >= 0; i--) {
+    const limit = SHEET.width - 4 - flagReach(flags[i].text)
+    const next = i < flags.length - 1 ? flags[i + 1].x - REMARKS.minFlagGap : Infinity
+    flags[i].x = Math.min(flags[i].x, limit, next)
+  }
+  return { brackets, flags }
+}
+
+/** How far right a flag's text reaches at 45 degrees, in SVG units. */
+export function flagReach(text: string): number {
+  return text.length * REMARKS.charWidth * Math.SQRT1_2
+}
+
+/** "Place · activities", cutting the place rather than the activities when too long. */
+function flagText(place: string | null, activities: string): string {
+  const full = [place, activities].filter(Boolean).join(' · ')
+  if (full.length <= REMARKS.maxFlagChars || !place || !activities) return clip(full, REMARKS.maxFlagChars)
+  const room = REMARKS.maxFlagChars - activities.length - 3
+  return room >= 8 ? `${clip(place, room)} · ${activities}` : clip(full, REMARKS.maxFlagChars)
+}
+
+function clip(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`
+}

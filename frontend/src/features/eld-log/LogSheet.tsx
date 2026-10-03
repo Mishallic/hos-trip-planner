@@ -1,5 +1,5 @@
 import { Box, Tooltip, Typography } from '@mui/material'
-import type { DailyLog } from '../../api/types'
+import type { DailyLog, LogHeader, Remark } from '../../api/types'
 import { hm } from '../../lib/format'
 import { color } from '../../theme/tokens'
 import {
@@ -19,25 +19,35 @@ import {
   SHEET,
   statusY,
 } from './logGeometry'
+import { GRID_BLOCK_HEIGHT, HEADER_HEIGHT, Recap, RECAP_HEIGHT, RemarksBand, REMARKS_HEIGHT, SheetHeader } from './SheetParts'
 
 const INK = color.paperInk
 const ROW_H = SHEET.rowHeight
 /** The band reaches a little past the grid, so the midnight labels centre on its edges. */
 const BAND_LEFT = GRID.left - 24
 const TOTALS_X = SHEET.width - 10 // right edge of the totals text
-const HEIGHT = GRID.bottom + 76
+const HEIGHT = HEADER_HEIGHT + GRID_BLOCK_HEIGHT + REMARKS_HEIGHT + RECAP_HEIGHT
 
 interface LogSheetProps {
   log: DailyLog
   /** The selected stop's stretch of this day, when it falls on this sheet. */
   selected: Segment | null
+  header: LogHeader
+  /** 1-based, of `days`. */
+  day: number
+  days: number
+  /** The last remark of the days before: names a stop that carries on into this day. */
+  carried?: Remark
+  /** A 34-hour restart has reset the cycle on or before this day. */
+  sinceRestart: boolean
 }
 
 /**
- * One day of the driver's log, drawn like the paper form: the 24-hour grid, the duty
- * line at exact minutes with a dot at every change, and each line's total.
+ * One day of the driver's log, drawn like the paper form: the header, the 24-hour
+ * grid with the duty line at exact minutes and a dot at every change, each line's
+ * total, the remarks with their brackets and flags, and the recap.
  */
-export function LogSheet({ log, selected }: LogSheetProps) {
+export function LogSheet({ log, selected, header, day, days, carried, sinceRestart }: LogSheetProps) {
   const runs = dutyRuns(log.segments)
   const totals = ROWS.map((row) => `${row.title} ${log.totals_hm[row.status]}`).join(', ')
 
@@ -51,6 +61,9 @@ export function LogSheet({ log, selected }: LogSheetProps) {
         style={{ display: 'block', width: '100%', height: 'auto', fontFamily: 'inherit' }}
       >
 
+        <SheetHeader log={log} header={header} day={day} days={days} />
+
+        <g transform={`translate(0 ${HEADER_HEIGHT})`}>
         <HourBand />
         <RowLabels />
 
@@ -71,6 +84,7 @@ export function LogSheet({ log, selected }: LogSheetProps) {
         ))}
 
         <Totals log={log} />
+        <RemarksBand log={log} top={GRID_BLOCK_HEIGHT - 10} carried={carried} />
 
         {/* On top of everything: one invisible target per stretch for the tooltip. */}
         {runs.map((run) => (
@@ -92,16 +106,38 @@ export function LogSheet({ log, selected }: LogSheetProps) {
             />
           </Tooltip>
         ))}
+        </g>
+
+        <Recap log={log} header={header} top={HEADER_HEIGHT + GRID_BLOCK_HEIGHT + REMARKS_HEIGHT} sinceRestart={sinceRestart} />
       </svg>
 
-      {/* The same day for screen readers, one line per stretch. */}
-      <Box component="ol" sx={visuallyHidden}>
-        {runs.map((run) => (
-          <li key={run.start}>
-            {clock(run.start)} to {clock(run.end)}, {rowTitle(run)}
-            {placeOf(run, log) ? `, ${placeOf(run, log)}` : ''}
-          </li>
-        ))}
+      {/* The same sheet for screen readers: the day, each stretch, the remarks, the recap. */}
+      <Box sx={visuallyHidden}>
+        <p>
+          From {log.from ?? 'unknown'} to {log.to ?? 'unknown'}, {Math.round(log.miles_today)} miles driven.
+        </p>
+        <ol>
+          {runs.map((run) => (
+            <li key={run.start}>
+              {clock(run.start)} to {clock(run.end)}, {rowTitle(run)}
+              {placeOf(run, log) ? `, ${placeOf(run, log)}` : ''}
+            </li>
+          ))}
+        </ol>
+        <ul aria-label="Remarks">
+          {log.remarks
+            .filter((remark) => remark.status !== 'driving')
+            .map((remark) => (
+              <li key={remark.minute}>
+                {remark.time}, {remark.place ?? 'unknown place'}: {remark.label}
+              </li>
+            ))}
+        </ul>
+        <p>
+          On duty today {hm(log.recap.on_duty_today_min)}. Hours on duty in the last 8 days{' '}
+          {sinceRestart ? '' : 'about '}
+          {hm(log.recap.cycle_used_min)}, available tomorrow {hm(log.recap.available_tomorrow_min)}.
+        </p>
       </Box>
     </>
   )
@@ -222,12 +258,10 @@ function overlaps(selected: Segment, runs: Run[]): [number, number][] {
     .filter(([start, end]) => end > start)
 }
 
-/** Each line's total on the right, their sum under them, and on-duty hours as the video circles them. */
+/** Each line's total on the right and their sum under them. */
 function Totals({ log }: { log: DailyLog }) {
   const left = GRID.right + 14
   const sumY = GRID.bottom + 27
-  const circleX = GRID.right + SHEET.totalsWidth / 2
-  const circleY = GRID.bottom + 52
   return (
     <g fill={INK}>
       {ROWS.map((row) => (
@@ -242,13 +276,6 @@ function Totals({ log }: { log: DailyLog }) {
       <line x1={left} x2={TOTALS_X} y1={GRID.bottom + 9} y2={GRID.bottom + 9} stroke={INK} strokeWidth={0.9} />
       <text x={TOTALS_X} y={sumY} textAnchor="end" fontSize={15} fontWeight={800}>
         {hm(Object.values(log.totals_min).reduce((sum, minutes) => sum + minutes, 0))}
-      </text>
-      <circle cx={circleX} cy={circleY} r={19} fill="none" stroke={INK} strokeWidth={1.2} />
-      <text x={circleX} y={circleY + 4} textAnchor="middle" fontSize={11} fontWeight={800}>
-        {log.on_duty_hours}
-      </text>
-      <text x={circleX - 26} y={circleY + 4} textAnchor="end" fontSize={11.5} fill={color.paperMuted}>
-        On duty today, lines 3 + 4, in hours
       </text>
     </g>
   )

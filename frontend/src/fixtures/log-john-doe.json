@@ -23,7 +23,7 @@
   "from": "Richmond, VA",
   "to": "Newark, NJ",
   "remarks": [
-    { "minute": 360, "time": "06:00", "status": "on_duty", "label": "Reported for work, loaded, pre-trip inspection", "place": "Richmond, VA", "mile": 0, "reasons": [] },
+    { "minute": 360, "time": "06:00", "status": "on_duty", "label": "Loading, pre-trip inspection", "place": "Richmond, VA", "mile": 0, "reasons": [] },
     { "minute": 450, "time": "07:30", "status": "driving", "label": "Driving", "place": "Richmond, VA", "mile": 0, "reasons": [] },
     { "minute": 540, "time": "09:00", "status": "on_duty", "label": "Fuel", "place": "Fredericksburg, VA", "mile": 60, "reasons": [] },
     { "minute": 570, "time": "09:30", "status": "driving", "label": "Driving", "place": "Fredericksburg, VA", "mile": 60, "reasons": [] },

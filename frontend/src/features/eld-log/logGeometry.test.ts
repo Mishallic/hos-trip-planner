@@ -13,7 +13,10 @@ import {
   GRID_WIDTH,
   gridTicks,
   hourLabels,
+  flagReach,
   minuteX,
+  remarkLayout,
+  SHEET,
   ROWS,
   statusY,
   stopOnSheet,
@@ -161,5 +164,97 @@ describe('stopOnSheet', () => {
       null,
       null,
     ])
+  })
+})
+
+describe('remarkLayout', () => {
+  it("flags John Doe's six stops with their places, as on the guide's grid", () => {
+    const { brackets, flags } = remarkLayout(doe)
+
+    expect(brackets).toHaveLength(6)
+    expect(flags.map((f) => f.text.split(' · ')[0])).toEqual([
+      'Richmond, VA',
+      'Fredericksburg, VA',
+      'Baltimore, MD',
+      'Philadelphia, PA',
+      'Cherry Hill, NJ',
+      'Newark, NJ',
+    ])
+    expect(flags[1].text).toBe('Fredericksburg, VA · Fuel')
+  })
+
+  it('hangs each flag from the middle of its bracket', () => {
+    const { brackets, flags } = remarkLayout(doe)
+
+    expect(flags[0].anchorX).toBeCloseTo((minuteX(360) + minuteX(450)) / 2, 6)
+    expect(brackets[0]).toMatchObject({ x1: minuteX(360), x2: minuteX(450) })
+  })
+
+  it('spreads flags that would overlap and keeps them in time order', () => {
+    const log = {
+      brackets: [
+        { start: 600, end: 630, place: 'A' },
+        { start: 640, end: 670, place: 'B' },
+        { start: 680, end: 700, place: 'C' },
+      ],
+      remarks: [],
+    }
+    const xs = remarkLayout(log).flags.map((f) => f.x)
+
+    xs.slice(1).forEach((x, i) => expect(x - xs[i]).toBeGreaterThanOrEqual(22))
+  })
+
+  it('names a stretch carried over from the day before', () => {
+    const plan = restart as unknown as TripPlan
+    const dayBefore = plan.logs[0].remarks.at(-1)!
+    const { flags } = remarkLayout(plan.logs[1], dayBefore)
+
+    expect(flags).toEqual([expect.objectContaining({ text: 'near Houck, AZ · 34-hour restart (continued)' })])
+  })
+
+  it("lets the day's own stop name a stretch carried over from the day before", () => {
+    const plan = restart as unknown as TripPlan
+    const carried = plan.logs[1].remarks.at(-1) ?? plan.logs[0].remarks.at(-1)!
+    const { flags } = remarkLayout(plan.logs[2], carried)
+
+    expect(flags[0].text).toBe('near Houck, AZ · Pre-trip inspection')
+  })
+
+  it('keeps every flag inside the sheet, late ones pulled back', () => {
+    const log = {
+      brackets: [
+        { start: 1300, end: 1380, place: 'Rancho Santa Margarita, CA' },
+        { start: 1400, end: 1440, place: 'Mount Pleasant Township, PA' },
+      ],
+      remarks: [
+        { minute: 1300, status: 'on_duty' as const, label: 'Drop-off', place: 'x', mile: 0, time: '21:40', reasons: [] },
+        { minute: 1400, status: 'off_duty' as const, label: 'Off duty', place: 'x', mile: 0, time: '23:20', reasons: [] },
+      ],
+    }
+    const { flags } = remarkLayout(log)
+
+    for (const flag of flags) expect(flag.x + flagReach(flag.text)).toBeLessThanOrEqual(SHEET.width)
+    expect(flags[1].x - flags[0].x).toBeGreaterThanOrEqual(22)
+  })
+
+  it('cuts the place, not the activities, when a flag is too long', () => {
+    const log = {
+      brackets: [{ start: 0, end: 60, place: 'near Rancho Santa Margarita Heights, CA' }],
+      remarks: [
+        { minute: 0, status: 'on_duty' as const, label: 'Pre-trip inspection, Pickup', place: 'x', mile: 0, time: '00:00', reasons: [] },
+      ],
+    }
+
+    expect(remarkLayout(log).flags[0].text).toMatch(/…, CA|… · Pre-trip inspection, Pickup$/)
+    expect(remarkLayout(log).flags[0].text.endsWith('Pre-trip inspection, Pickup')).toBe(true)
+  })
+
+  it('cuts very long flag text', () => {
+    const log = { brackets: [{ start: 0, end: 60, place: 'Rancho Santa Margarita, CA' }], remarks: [
+      { minute: 0, status: 'on_duty' as const, label: 'Pre-trip inspection, Pickup, Fuel, 30-minute break, Loading, Scale', place: 'x', mile: 0, time: '00:00', reasons: [] },
+    ] }
+
+    expect(remarkLayout(log).flags[0].text).toHaveLength(60)
+    expect(remarkLayout(log).flags[0].text.endsWith('…')).toBe(true)
   })
 })

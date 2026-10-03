@@ -15,6 +15,13 @@ const SHEET_MIN_WIDTH = 820
 export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopSelection }) {
   const stop = selection.selected === null ? undefined : plan.stops[selection.selected]
   const spans = plan.logs.map((log) => (stop ? stopOnSheet(stop, log) : null))
+  // A day whose cycle count dropped below yesterday's plus today's work had a 34-hour
+  // restart; from then on the recap counts from zero, not from the hours entered.
+  const restartBy = plan.logs.map((log, i) => {
+    const before = plan.logs[i - 1]?.recap.cycle_used_min
+    return before !== undefined && log.recap.cycle_used_min < before + log.recap.on_duty_today_min
+  })
+  const sinceRestart = restartBy.map((_, i) => restartBy.slice(0, i + 1).some(Boolean))
 
   const sheets = useRef<(HTMLElement | null)[]>([])
   const scrollers = useRef<(HTMLElement | null)[]>([])
@@ -75,7 +82,7 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
               sx={{ justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 2, mb: 1.5 }}
             >
               <Typography sx={{ fontWeight: 800, fontFamily: 'Manrope Variable', color: color.paperInk }}>
-                Driver's Daily Log · Day {index + 1}
+                Day {index + 1} of {plan.logs.length}
               </Typography>
               <Typography sx={{ fontWeight: 600, fontSize: 14, color: color.paperInk }}>{longDate(log)}</Typography>
             </Stack>
@@ -86,7 +93,15 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
               sx={{ overflowX: 'auto', mx: -1, px: 1, pb: 0.5 }}
             >
               <Box sx={{ minWidth: SHEET_MIN_WIDTH }}>
-                <LogSheet log={log} selected={spans[index]} />
+                <LogSheet
+                  log={log}
+                  selected={spans[index]}
+                  header={plan.log_header}
+                  day={index + 1}
+                  days={plan.logs.length}
+                  carried={plan.logs.slice(0, index).flatMap((day) => day.remarks).at(-1)}
+                  sinceRestart={sinceRestart[index]}
+                />
               </Box>
             </Box>
             {scrolls && (
