@@ -19,7 +19,7 @@
 - [x] verdict, driver clocks, timeline, stop list
 - [x] log sheet: grid + duty line
 - [x] log sheet: remarks flags, brackets, totals, recap
-- [ ] day tabs + print
+- [x] day tabs + print
 - [ ] loading / error / empty states, mobile
 - [x] footer credit: GeoNames (CC BY 4.0), OpenStreetMap contributors
 

@@ -40,6 +40,7 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
         gridTemplateColumns: `${layout.rail}px 1fr`,
         gridTemplateRows: `${layout.topBar}px 1fr auto`,
         height: '100dvh',
+        '@media print': { display: 'block', height: 'auto' },
         [MOBILE]: {
           gridTemplateColumns: '1fr',
           gridTemplateRows: `${layout.topBarMobile}px 1fr auto ${layout.bottomNav}px`,
@@ -52,6 +53,7 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
 
       <Box
         component="header"
+        data-no-print
         sx={{
           gridColumn: 2,
           display: 'flex',
@@ -96,13 +98,14 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
 
       <Box
         component="main"
-        sx={{ gridColumn: 2, minHeight: 0, minWidth: 0, [MOBILE]: { gridColumn: 1 } }}
+        sx={{ gridColumn: 2, minHeight: 0, minWidth: 0, [MOBILE]: { gridColumn: 1 }, '@media print': { overflow: 'visible' } }}
       >
         {children}
       </Box>
 
       <Box
         component="footer"
+        data-no-print
         sx={{
           gridColumn: 2,
           px: 3,
@@ -126,6 +129,7 @@ function Rail({ view, onViewChange }: Pick<AppShellProps, 'view' | 'onViewChange
   return (
     <Box
       component="nav"
+      data-no-print
       aria-label="Main"
       sx={{
         gridRow: '1 / 4',
@@ -184,6 +188,7 @@ function BottomNav({ view, onViewChange }: Pick<AppShellProps, 'view' | 'onViewC
   return (
     <Box
       component="nav"
+      data-no-print
       aria-label="Main"
       sx={{
         display: 'none',

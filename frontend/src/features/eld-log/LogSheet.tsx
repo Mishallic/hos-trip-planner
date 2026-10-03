@@ -230,7 +230,7 @@ function Grid() {
 /** The selected stop's part of its row, shaded under the grid. */
 function SelectedStretch({ selected, runs }: { selected: Segment; runs: Run[] }) {
   return (
-    <g fill={color.paperHighlight}>
+    <g fill={color.paperHighlight} data-no-print>
       {overlaps(selected, runs).map(([start, end]) => (
         <rect key={start} x={minuteX(start)} y={rowTop(selected.status)} width={minuteX(end) - minuteX(start)} height={ROW_H} />
       ))}
@@ -242,7 +242,7 @@ function SelectedStretch({ selected, runs }: { selected: Segment; runs: Run[] })
 function SelectedLine({ selected, runs }: { selected: Segment; runs: Run[] }) {
   const y = statusY(selected.status)
   return (
-    <g stroke={color.paperLine} strokeWidth={6} strokeLinecap="butt">
+    <g stroke={color.paperLine} strokeWidth={6} strokeLinecap="butt" data-no-print>
       {overlaps(selected, runs).map(([start, end]) => (
         <line key={start} x1={minuteX(start)} x2={minuteX(end)} y1={y} y2={y} />
       ))}

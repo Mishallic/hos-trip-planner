@@ -54,6 +54,11 @@ export const theme = createTheme({
           WebkitFontSmoothing: 'antialiased',
         },
         '::selection': { background: 'rgba(64, 224, 208, 0.25)' },
+        // Printing is for the log sheets: landscape pages, white paper, no app chrome.
+        '@page': { size: 'landscape', margin: '10mm' },
+        '@media print': {
+          '[data-no-print]': { display: 'none !important' },
+        },
       },
     },
     MuiPaper: {

@@ -62,7 +62,12 @@ function App() {
         />
       )}
       {view === 'logs' &&
-        (plan ? <LogsView plan={plan} selection={selection} /> : <NoPlanYet onPlan={() => changeView('plan')} />)}
+        (plan ? (
+          // A new plan (Back, Forward, a new trip) opens its own first day.
+          <LogsView key={`${plan.summary.start}|${plan.summary.dropoff_arrival}|${plan.logs.length}`} plan={plan} selection={selection} />
+        ) : (
+          <NoPlanYet onPlan={() => changeView('plan')} />
+        ))}
       {view === 'directions' &&
         (plan ? <DirectionsView plan={plan} /> : <NoPlanYet onPlan={() => changeView('plan')} />)}
     </AppShell>
