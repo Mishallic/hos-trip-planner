@@ -14,6 +14,10 @@ function App() {
   const [view, setView] = useState<View>('plan')
   const [editing, setEditing] = useState(false)
   const { form, plan, error, isPlanning, submit } = useTripPlan()
+  // The selected stop, shared by the map and the stop list. A new plan clears it.
+  const [selection, setSelection] = useState<{ plan?: object; stop: number | null }>({ stop: null })
+  const selectedStop = selection.plan === plan ? selection.stop : null
+  const selectStop = (stop: number) => setSelection({ plan, stop })
 
   const tripForm = (
     <TripForm
@@ -54,7 +58,15 @@ function App() {
         )
       }
     >
-      {view === 'plan' && <PlanView plan={plan} form={tripForm} planning={isPlanning} />}
+      {view === 'plan' && (
+        <PlanView
+          plan={plan}
+          form={tripForm}
+          planning={isPlanning}
+          selectedStop={selectedStop}
+          onSelectStop={selectStop}
+        />
+      )}
       {view === 'logs' && (plan ? <LogsView plan={plan} /> : <NoPlanYet onPlan={() => setView('plan')} />)}
       {view === 'directions' &&
         (plan ? <DirectionsView plan={plan} /> : <NoPlanYet onPlan={() => setView('plan')} />)}

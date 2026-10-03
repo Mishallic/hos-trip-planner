@@ -15,7 +15,7 @@
 ## UI
 - [ ] theme + app shell
 - [x] trip form (place search, start time, cycle, log header fields)
-- [ ] map + stops
+- [x] map + stops
 - [ ] verdict, driver clocks, timeline, stop list
 - [ ] log sheet: grid + duty line
 - [ ] log sheet: remarks flags, brackets, totals, recap

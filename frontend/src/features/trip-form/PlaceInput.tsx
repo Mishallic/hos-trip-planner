@@ -25,9 +25,10 @@ export function PlaceInput({ label, value, onChange, error, autoFocus }: PlaceIn
   const [options, setOptions] = useState<PlaceOption[]>([])
   const [loading, setLoading] = useState(false)
   const [searchError, setSearchError] = useState<string>()
+  // Search only after the user types here, not for text that came from a link.
+  const [typed, setTyped] = useState(false)
   const text = value.label
-  // Search only while the user is typing free text, not after a pick.
-  const searching = text.trim().length >= MIN_CHARS && value.lat === undefined
+  const searching = typed && text.trim().length >= MIN_CHARS && value.lat === undefined
 
   useEffect(() => {
     if (!searching) return
@@ -62,7 +63,10 @@ export function PlaceInput({ label, value, onChange, error, autoFocus }: PlaceIn
       getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
       inputValue={text}
       onInputChange={(_, next, reason) => {
-        if (reason === 'input' || reason === 'clear') onChange({ label: next })
+        if (reason === 'input' || reason === 'clear') {
+          setTyped(true)
+          onChange({ label: next })
+        }
       }}
       onChange={(_, next) => {
         if (next && typeof next !== 'string') onChange({ label: next.label, lat: next.lat, lon: next.lon })

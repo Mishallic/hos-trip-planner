@@ -1,12 +1,12 @@
 import { Box } from '@mui/material'
-import { BedDouble, ClipboardCheck, Coffee, Flag, Fuel, MapPin, RotateCcw } from 'lucide-react'
+import { BedDouble, ClipboardCheck, Coffee, Flag, Fuel, Package, RotateCcw } from 'lucide-react'
 
 import type { StopKind } from '../../api/types'
 import { stopColor } from '../../theme/tokens'
 
 const ICONS: Record<StopKind, typeof Fuel> = {
   pre_trip: ClipboardCheck,
-  pickup: MapPin,
+  pickup: Package,
   dropoff: Flag,
   fuel: Fuel,
   break: Coffee,

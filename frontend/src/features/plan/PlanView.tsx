@@ -1,19 +1,20 @@
 import {
   Box,
   Card,
-  Chip,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material'
 import { CircleCheck, ListChecks, Map as MapIcon, Truck } from 'lucide-react'
-import { type ReactNode, useMemo } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useRef } from 'react'
 
 import type { Clocks, Stop, TripPlan } from '../../api/types'
 import { clockTime, hm, miles, STOP_LABEL } from '../../lib/format'
-import { decodePolyline } from '../../lib/polyline'
 import { color, layout, radius, stopColor } from '../../theme/tokens'
 import { StopIcon } from './StopIcon'
+
+// Leaflet loads in its own chunk, only once there is a route to show.
+const RouteMap = lazy(() => import('../route-map/RouteMap'))
 
 const MOBILE = `@media (max-width: ${layout.mobile - 1}px)`
 
@@ -21,9 +22,11 @@ interface PlanViewProps {
   plan?: TripPlan
   form: ReactNode // the trip form, full or collapsed to one line
   planning: boolean
+  selectedStop: number | null
+  onSelectStop: (index: number) => void
 }
 
-export function PlanView({ plan, form, planning }: PlanViewProps) {
+export function PlanView({ plan, form, planning, selectedStop, onSelectStop }: PlanViewProps) {
   return (
     <Box
       sx={{
@@ -35,6 +38,7 @@ export function PlanView({ plan, form, planning }: PlanViewProps) {
       }}
     >
       <Box
+        data-scroll-container
         sx={{
           overflowY: 'auto',
           minWidth: 0,
@@ -47,7 +51,7 @@ export function PlanView({ plan, form, planning }: PlanViewProps) {
         <Stack spacing={2}>
           {form}
           {plan && <VerdictCard plan={plan} />}
-          {plan && <StopList stops={plan.stops} />}
+          {plan && <StopList stops={plan.stops} selected={selectedStop} onSelect={onSelectStop} />}
         </Stack>
       </Box>
 
@@ -61,7 +65,13 @@ export function PlanView({ plan, form, planning }: PlanViewProps) {
           [MOBILE]: { order: plan ? 1 : 2, gridTemplateRows: '320px auto', pb: plan ? 0 : 2 },
         }}
       >
-        {plan ? <MapPreview plan={plan} /> : <MapEmpty planning={planning} />}
+        {plan ? (
+          <Suspense fallback={<MapEmpty planning />}>
+            <RouteMap plan={plan} selectedStop={selectedStop} onSelectStop={onSelectStop} />
+          </Suspense>
+        ) : (
+          <MapEmpty planning={planning} />
+        )}
         {plan && <TimelineStrip plan={plan} />}
       </Box>
     </Box>
@@ -213,7 +223,26 @@ function ClockMeters({ clocks }: { clocks: Clocks }) {
   )
 }
 
-function StopList({ stops }: { stops: Stop[] }) {
+interface StopListProps {
+  stops: Stop[]
+  selected: number | null
+  onSelect: (index: number) => void
+}
+
+function StopList({ stops, selected, onSelect }: StopListProps) {
+  const rows = useRef<(HTMLDivElement | null)[]>([])
+  // Bring the selected stop into view inside the sidebar only. On mobile the page
+  // itself scrolls, and jumping away from the map the user just tapped would be wrong.
+  useEffect(() => {
+    const row = selected === null ? null : rows.current[selected]
+    const sidebar = row?.closest<HTMLElement>('[data-scroll-container]')
+    if (!row || !sidebar || sidebar.scrollHeight <= sidebar.clientHeight) return
+    const rowBox = row.getBoundingClientRect()
+    const box = sidebar.getBoundingClientRect()
+    if (rowBox.top < box.top) sidebar.scrollBy({ top: rowBox.top - box.top - 12, behavior: 'smooth' })
+    else if (rowBox.bottom > box.bottom) sidebar.scrollBy({ top: rowBox.bottom - box.bottom + 12, behavior: 'smooth' })
+  }, [selected])
+
   return (
     <Card sx={{ p: 2.5 }}>
       <CardHeading
@@ -223,8 +252,37 @@ function StopList({ stops }: { stops: Stop[] }) {
         hint={`${stops.length}`}
       />
       <Stack divider={<Box sx={{ borderTop: `1px solid ${color.borderSoft}` }} />}>
-        {stops.map((stop) => (
-          <Stack key={`${stop.kind}-${stop.start}`} direction="row" spacing={1.5} sx={{ py: 1.25 }}>
+        {stops.map((stop, index) => (
+          <Stack
+            key={`${stop.kind}-${stop.start}`}
+            ref={(row: HTMLDivElement | null) => {
+              rows.current[index] = row
+            }}
+            direction="row"
+            spacing={1.5}
+            role="button"
+            tabIndex={0}
+            aria-pressed={index === selected}
+            onClick={() => onSelect(index)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onSelect(index)
+              }
+            }}
+            sx={{
+              py: 1.25,
+              px: 1,
+              mx: -1,
+              borderRadius: `${radius.button}px`,
+              cursor: 'pointer',
+              outline: 'none',
+              background: index === selected ? 'rgba(64, 224, 208, 0.08)' : 'transparent',
+              boxShadow: index === selected ? `inset 3px 0 0 ${stopColor[stop.kind]}` : 'none',
+              '&:hover': { background: 'rgba(255, 255, 255, 0.03)' },
+              '&:focus-visible': { boxShadow: `0 0 0 2px ${color.turquoise}` },
+            }}
+          >
             <StopIcon kind={stop.kind} />
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between' }}>
@@ -278,91 +336,6 @@ function MapEmpty({ planning }: { planning: boolean }) {
             : 'Enter where the truck is, the pickup and the drop-off. Every rest, break and fuel stop is placed for you.'}
         </Typography>
       </Box>
-    </Box>
-  )
-}
-
-/** Placeholder until the Leaflet map (chunk 16): the route drawn from its polyline. */
-function MapPreview({ plan }: { plan: TripPlan }) {
-  const { path, project } = useMemo(() => {
-    const points = decodePolyline(plan.route.polyline)
-    const lats = points.map((p) => p[0])
-    const lons = points.map((p) => p[1])
-    const [minLat, maxLat] = [Math.min(...lats), Math.max(...lats)]
-    const [minLon, maxLon] = [Math.min(...lons), Math.max(...lons)]
-    const k = Math.cos((((minLat + maxLat) / 2) * Math.PI) / 180)
-    const width = (maxLon - minLon) * k
-    const height = maxLat - minLat
-    const scale = 860 / Math.max(width, height * 1.6)
-    const project = ([lat, lon]: [number, number]) => [
-      70 + ((lon - minLon) * k * scale * 1000) / 1000 + (860 - width * scale) / 2,
-      70 + (maxLat - lat) * scale + (520 - height * scale) / 2,
-    ]
-    const path = points.map((p, i) => `${i ? 'L' : 'M'}${project(p).map((v) => v.toFixed(1)).join(' ')}`).join('')
-    return { path, project }
-  }, [plan.route.polyline])
-
-  const first = plan.stops[0]
-  const last = plan.stops[plan.stops.length - 1]
-  return (
-    <Box
-      sx={{
-        position: 'relative',
-        borderRadius: `${radius.panel}px`,
-        overflow: 'hidden',
-        border: `1px solid ${color.border}`,
-        background: `radial-gradient(120% 100% at 35% 25%, #2A4352 0%, #22333B 50%, #1A2830 100%)`,
-        minHeight: 0,
-      }}
-    >
-      <svg viewBox="0 0 1000 660" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
-        <defs>
-          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M40 0H0V40" fill="none" stroke="rgba(196,208,212,0.07)" />
-          </pattern>
-          <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-            <feGaussianBlur stdDeviation="3" />
-          </filter>
-        </defs>
-        <rect width="1000" height="660" fill="url(#grid)" />
-        <path d={path} fill="none" stroke={color.turquoise} strokeOpacity="0.35" strokeWidth="8" filter="url(#glow)" />
-        <path d={path} fill="none" stroke="#FFFFFF" strokeWidth="2.6" strokeLinejoin="round" />
-        {plan.stops
-          .filter((s) => s.kind !== 'pre_trip')
-          .map((s) => {
-            const [x, y] = project([s.lat, s.lon])
-            return <circle key={s.start} cx={x} cy={y} r="6" fill={stopColor[s.kind]} stroke="#05060F" strokeWidth="2" />
-          })}
-        {[
-          { stop: first, letter: 'A', fill: color.coral },
-          { stop: last, letter: 'B', fill: color.turquoise },
-        ].map(({ stop, letter, fill }) => {
-          const [x, y] = project([stop.lat, stop.lon])
-          return (
-            <g key={letter} transform={`translate(${x} ${y})`}>
-              <path d="M0 0 C-14 -18 -16 -26 -16 -32 a16 16 0 1 1 32 0 c0 6 -2 14 -16 32Z" fill={fill} stroke="#05060F" strokeWidth="1.5" />
-              <text x="0" y="-27" textAnchor="middle" fontSize="16" fontWeight="800" fill="#FFFFFF" fontFamily="Manrope Variable">
-                {letter}
-              </text>
-              <text x="0" y="24" textAnchor="middle" fontSize="15" fontWeight="700" fill="#FFFFFF" fontFamily="DM Sans Variable" stroke="#0E1A21" strokeWidth="4" paintOrder="stroke" strokeLinejoin="round">
-                {stop.place}
-              </text>
-            </g>
-          )
-        })}
-      </svg>
-      <Chip
-        size="small"
-        label="Route preview · interactive map next"
-        sx={{
-          position: 'absolute',
-          top: 14,
-          left: 14,
-          background: 'rgba(5, 6, 15, 0.7)',
-          color: color.textSecondary,
-          border: `1px solid ${color.borderSoft}`,
-        }}
-      />
     </Box>
   )
 }
