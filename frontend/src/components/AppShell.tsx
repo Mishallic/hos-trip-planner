@@ -62,7 +62,8 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
           background: 'rgba(5, 6, 15, 0.55)',
           backdropFilter: 'blur(12px)',
           minWidth: 0,
-          [MOBILE]: { gridColumn: 1, px: 2, position: 'sticky', top: 0, zIndex: 10 },
+          // On a phone the page scrolls under it, light log sheets included: less see-through.
+          [MOBILE]: { gridColumn: 1, px: 2, position: 'sticky', top: 0, zIndex: 10, background: 'rgba(5, 6, 15, 0.9)' },
         }}
       >
         <Box sx={{ display: 'none', [MOBILE]: { display: 'flex' } }}>

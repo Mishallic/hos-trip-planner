@@ -1,0 +1,48 @@
+{
+  "date": "2021-04-09",
+  "starts_at": "2021-04-09T00:00-04:00",
+  "segments": [
+    { "status": "off_duty", "start": 0, "end": 360 },
+    { "status": "on_duty", "start": 360, "end": 450 },
+    { "status": "driving", "start": 450, "end": 540 },
+    { "status": "on_duty", "start": 540, "end": 570 },
+    { "status": "driving", "start": 570, "end": 720 },
+    { "status": "off_duty", "start": 720, "end": 780 },
+    { "status": "driving", "start": 780, "end": 900 },
+    { "status": "on_duty", "start": 900, "end": 930 },
+    { "status": "driving", "start": 930, "end": 960 },
+    { "status": "sleeper_berth", "start": 960, "end": 1065 },
+    { "status": "driving", "start": 1065, "end": 1140 },
+    { "status": "on_duty", "start": 1140, "end": 1260 },
+    { "status": "off_duty", "start": 1260, "end": 1440 }
+  ],
+  "totals_min": { "off_duty": 600, "sleeper_berth": 105, "driving": 465, "on_duty": 270 },
+  "totals_hm": { "off_duty": "10:00", "sleeper_berth": "1:45", "driving": "7:45", "on_duty": "4:30" },
+  "on_duty_hours": 12.25,
+  "miles_today": 350,
+  "from": "Richmond, VA",
+  "to": "Newark, NJ",
+  "remarks": [
+    { "minute": 360, "time": "06:00", "status": "on_duty", "label": "Reported for work, loaded, pre-trip inspection", "place": "Richmond, VA", "mile": 0, "reasons": [] },
+    { "minute": 450, "time": "07:30", "status": "driving", "label": "Driving", "place": "Richmond, VA", "mile": 0, "reasons": [] },
+    { "minute": 540, "time": "09:00", "status": "on_duty", "label": "Fuel", "place": "Fredericksburg, VA", "mile": 60, "reasons": [] },
+    { "minute": 570, "time": "09:30", "status": "driving", "label": "Driving", "place": "Fredericksburg, VA", "mile": 60, "reasons": [] },
+    { "minute": 720, "time": "12:00", "status": "off_duty", "label": "Lunch", "place": "Baltimore, MD", "mile": 150, "reasons": [] },
+    { "minute": 780, "time": "13:00", "status": "driving", "label": "Driving", "place": "Baltimore, MD", "mile": 150, "reasons": [] },
+    { "minute": 900, "time": "15:00", "status": "on_duty", "label": "Delivery", "place": "Philadelphia, PA", "mile": 250, "reasons": [] },
+    { "minute": 930, "time": "15:30", "status": "driving", "label": "Driving", "place": "Philadelphia, PA", "mile": 250, "reasons": [] },
+    { "minute": 960, "time": "16:00", "status": "sleeper_berth", "label": "Sleeper berth", "place": "Cherry Hill, NJ", "mile": 258, "reasons": [] },
+    { "minute": 1065, "time": "17:45", "status": "driving", "label": "Driving", "place": "Cherry Hill, NJ", "mile": 258, "reasons": [] },
+    { "minute": 1140, "time": "19:00", "status": "on_duty", "label": "Post-trip inspection, paperwork", "place": "Newark, NJ", "mile": 350, "reasons": [] },
+    { "minute": 1260, "time": "21:00", "status": "off_duty", "label": "Off duty", "place": "Newark, NJ", "mile": 350, "reasons": [] }
+  ],
+  "brackets": [
+    { "start": 360, "end": 450, "place": "Richmond, VA" },
+    { "start": 540, "end": 570, "place": "Fredericksburg, VA" },
+    { "start": 720, "end": 780, "place": "Baltimore, MD" },
+    { "start": 900, "end": 930, "place": "Philadelphia, PA" },
+    { "start": 960, "end": 1065, "place": "Cherry Hill, NJ" },
+    { "start": 1140, "end": 1260, "place": "Newark, NJ" }
+  ],
+  "recap": { "on_duty_today_min": 735, "cycle_used_min": 735, "available_tomorrow_min": 3465, "approximate": true }
+}

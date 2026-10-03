@@ -19,6 +19,13 @@ function App() {
   // One selected stop for the map, timeline, list and clocks. A new plan clears it.
   const selection = useStopSelection(plan)
 
+  // On a phone the page itself scrolls: a new view starts at its top, not halfway
+  // down where the last one was left.
+  const changeView = (next: View) => {
+    setView(next)
+    window.scrollTo(0, 0)
+  }
+
   const tripForm = (
     <TripForm
       initial={form}
@@ -36,7 +43,7 @@ function App() {
   return (
     <AppShell
       view={view}
-      onViewChange={setView}
+      onViewChange={changeView}
       title={
         plan && (
           <Typography noWrap sx={{ fontSize: 14, fontWeight: 500, color: 'inherit' }}>
@@ -54,9 +61,10 @@ function App() {
           selection={selection}
         />
       )}
-      {view === 'logs' && (plan ? <LogsView plan={plan} /> : <NoPlanYet onPlan={() => setView('plan')} />)}
+      {view === 'logs' &&
+        (plan ? <LogsView plan={plan} selection={selection} /> : <NoPlanYet onPlan={() => changeView('plan')} />)}
       {view === 'directions' &&
-        (plan ? <DirectionsView plan={plan} /> : <NoPlanYet onPlan={() => setView('plan')} />)}
+        (plan ? <DirectionsView plan={plan} /> : <NoPlanYet onPlan={() => changeView('plan')} />)}
     </AppShell>
   )
 }

@@ -36,6 +36,9 @@ export const color = {
   // Paper log sheets are light, like the printed form.
   paper: '#F7F5EF',
   paperInk: '#14202B',
+  paperMuted: '#56616B',
+  paperLine: '#1B62B4', // the duty line, in blue ink like the guide's completed grid
+  paperHighlight: 'rgba(0, 139, 139, 0.16)', // the selected stop's stretch of the day
 } as const
 
 export const gradient = {
