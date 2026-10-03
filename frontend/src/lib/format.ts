@@ -18,6 +18,20 @@ export function clockTime(iso: string, withDay = true): string {
   return `${weekday} ${time}`
 }
 
+/**
+ * From start to end, naming the end's day only when it differs: "Wed 17:30 – 18:00",
+ * but "Mon 19:30 – Wed 05:30", so a 34-hour restart never reads as overnight. The
+ * dates compare as written, since every time in a plan carries the same offset.
+ */
+export function timeRange(start: string, end: string): string {
+  return `${clockTime(start)} – ${clockTime(end, start.slice(0, 10) !== end.slice(0, 10))}`
+}
+
+/** "1 break", "2 breaks". */
+export function count(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`
+}
+
 export function miles(value: number): string {
   return `${value.toLocaleString('en-US', { maximumFractionDigits: 0 })} mi`
 }

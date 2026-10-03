@@ -13,15 +13,15 @@
 - [x] api tests
 
 ## UI
-- [ ] theme + app shell
+- [x] theme + app shell
 - [x] trip form (place search, start time, cycle, log header fields)
 - [x] map + stops
-- [ ] verdict, driver clocks, timeline, stop list
+- [x] verdict, driver clocks, timeline, stop list
 - [ ] log sheet: grid + duty line
 - [ ] log sheet: remarks flags, brackets, totals, recap
 - [ ] day tabs + print
 - [ ] loading / error / empty states, mobile
-- [ ] footer credit: GeoNames (CC BY 4.0), OpenStreetMap contributors
+- [x] footer credit: GeoNames (CC BY 4.0), OpenStreetMap contributors
 
 ## Ship
 - [ ] smoke test on prod (short, multi-day, restart, bad input)

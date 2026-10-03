@@ -6,8 +6,9 @@ import L from 'leaflet'
 import { useEffect, useMemo, useRef } from 'react'
 
 import type { Stop, TripPlan } from '../../api/types'
-import { clockTime, STOP_LABEL } from '../../lib/format'
+import { STOP_LABEL, timeRange } from '../../lib/format'
 import { decodePolyline } from '../../lib/polyline'
+import type { StopSelection } from '../../state/selection'
 import { color, radius, stopColor } from '../../theme/tokens'
 import {
   type Basemap,
@@ -20,26 +21,33 @@ import {
 import { iconFor } from './markers'
 import { groupOf, groupStops, type StopGroup } from './stopGroups'
 
+/** Zoom used when centring on a stop from far out, so the spot is recognisable. */
+const CENTRE_MIN_ZOOM = 7
+
+/** Pickup and drop-off pins sit above stop dots; the selected marker above both. */
+const zIndexFor = (group: StopGroup, selected: boolean) => (selected ? 1000 : group.kind === 'stop' ? 0 : 500)
 
 interface RouteMapProps {
   plan: TripPlan
-  selectedStop: number | null
-  onSelectStop: (index: number) => void
+  selection: StopSelection
 }
 
 /** The route on a dark map, with one marker per stop spot. Clicking selects the stop. */
-export default function RouteMap({ plan, selectedStop, onSelectStop }: RouteMapProps) {
+export default function RouteMap({ plan, selection }: RouteMapProps) {
+  const { selected: selectedStop, request, select: onSelectStop, centreRequest, centred, markCentred } = selection
   const element = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map | null>(null)
   const markers = useRef<Map<string, L.Marker>>(new Map())
   const groups = useMemo(() => groupStops(plan.stops), [plan.stops])
   const selectedGroup = selectedStop === null ? undefined : groupOf(groups, selectedStop)
 
-  // Keep the latest callback without rebuilding the map.
+  // Keep the latest callback and selection without rebuilding the map.
   const select = useRef(onSelectStop)
+  const current = useRef(selectedStop)
   useEffect(() => {
     select.current = onSelectStop
-  }, [onSelectStop])
+    current.current = selectedStop
+  }, [onSelectStop, selectedStop])
 
   // Build the map once per plan.
   useEffect(() => {
@@ -61,11 +69,28 @@ export default function RouteMap({ plan, selectedStop, onSelectStop }: RouteMapP
         icon: iconFor(group, false),
         keyboard: true,
         title: markerTitle(group, plan.stops),
-        zIndexOffset: group.kind === 'stop' ? 0 : 500,
+        zIndexOffset: zIndexFor(group, false),
       })
       marker.bindTooltip(markerTitle(group, plan.stops), { direction: 'top', className: 'route-tooltip' })
       marker.bindPopup(popupHtml(group, plan.stops), { className: 'route-popup', maxWidth: 300, autoPanPadding: [24, 24] })
-      marker.on('click', () => select.current(group.stops[0]))
+      // A spot selects its first stop, unless one of its stops is selected already:
+      // then a click only opens or closes the popup, as Leaflet does on its own.
+      const pick = () => {
+        if (current.current === null || !group.stops.includes(current.current)) select.current(group.stops[0])
+      }
+      marker.on('click', pick)
+      // Markers are buttons for the keyboard too. Leaflet toggles the popup on Enter
+      // (keypress) but never fires a click, so select after it; Space does both.
+      marker.on('keypress', (event) => {
+        if ((event as L.LeafletKeyboardEvent).originalEvent.key === 'Enter') pick()
+      })
+      marker.on('keydown', (event) => {
+        const key = (event as L.LeafletKeyboardEvent).originalEvent
+        if (key.key !== ' ') return
+        key.preventDefault()
+        pick()
+        marker.togglePopup()
+      })
       marker.addTo(instance)
       created.set(group.key, marker)
     }
@@ -82,14 +107,33 @@ export default function RouteMap({ plan, selectedStop, onSelectStop }: RouteMapP
     }
   }, [plan, groups])
 
-  // Follow the selection: enlarge the marker and open its popup.
+  // Follow the selection: enlarge the marker, lift it above its neighbours and open
+  // its popup. Every request runs this, so selecting a stop again reopens a popup
+  // the user closed, and Leaflet pans it back into view.
   useEffect(() => {
     for (const group of groups) {
-      markers.current.get(group.key)?.setIcon(iconFor(group, group.key === selectedGroup?.key))
+      const isSelected = group.key === selectedGroup?.key
+      const marker = markers.current.get(group.key)
+      marker?.setIcon(iconFor(group, isSelected))
+      marker?.setZIndexOffset(zIndexFor(group, isSelected))
     }
     const marker = selectedGroup && markers.current.get(selectedGroup.key)
-    if (marker && !marker.isPopupOpen()) marker.openPopup()
-  }, [groups, selectedGroup])
+    if (!marker) return
+    // A popup opened by a click sits on the small icon: move it up to the large one.
+    if (marker.isPopupOpen()) marker.getPopup()?.update()
+    else marker.openPopup()
+  }, [groups, selectedGroup, request])
+
+  // "Centre the map on this stop" (Enter in the stop list). Each request is carried
+  // out once, including one made while the map was still loading; an old request
+  // never pulls the map back after the user pans away.
+  useEffect(() => {
+    if (centreRequest === centred) return
+    markCentred(centreRequest)
+    if (!map.current || !selectedGroup) return
+    const zoom = Math.max(map.current.getZoom(), CENTRE_MIN_ZOOM)
+    map.current.setView([selectedGroup.lat, selectedGroup.lon], zoom, { animate: true })
+  }, [centreRequest, centred, markCentred, selectedGroup])
 
   return (
     <Box
@@ -203,7 +247,7 @@ function popupHtml(group: StopGroup, stops: Stop[]): string {
           <div class="route-popup-row">
             <span class="route-popup-dot" style="background:${stopColor[stop.kind]}"></span>
             <strong style="color:${stopColor[stop.kind]}">${STOP_LABEL[stop.kind]}</strong>
-            <span class="route-popup-time">${clockTime(stop.start)} – ${clockTime(stop.end, false)}</span>
+            <span class="route-popup-time">${timeRange(stop.start, stop.end)}</span>
           </div>
           <p>${escapeHtml(stop.explanation)}</p>
         </li>`

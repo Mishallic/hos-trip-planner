@@ -1,4 +1,4 @@
-import { Box, Button, Chip, Typography } from '@mui/material'
+import { Box, Button, Typography } from '@mui/material'
 import { FileText } from 'lucide-react'
 import { useState } from 'react'
 
@@ -7,6 +7,8 @@ import { DirectionsView } from './features/directions/DirectionsView'
 import { LogsView } from './features/logs/LogsView'
 import { PlanView } from './features/plan/PlanView'
 import { TripForm } from './features/trip-form/TripForm'
+import { VerdictBadge } from './features/trip-summary/VerdictBadge'
+import { useStopSelection } from './state/selection'
 import { useTripPlan } from './state/useTripPlan'
 import { color } from './theme/tokens'
 
@@ -14,10 +16,8 @@ function App() {
   const [view, setView] = useState<View>('plan')
   const [editing, setEditing] = useState(false)
   const { form, plan, error, isPlanning, submit } = useTripPlan()
-  // The selected stop, shared by the map and the stop list. A new plan clears it.
-  const [selection, setSelection] = useState<{ plan?: object; stop: number | null }>({ stop: null })
-  const selectedStop = selection.plan === plan ? selection.stop : null
-  const selectStop = (stop: number) => setSelection({ plan, stop })
+  // One selected stop for the map, timeline, list and clocks. A new plan clears it.
+  const selection = useStopSelection(plan)
 
   const tripForm = (
     <TripForm
@@ -44,27 +44,14 @@ function App() {
           </Typography>
         )
       }
-      badge={
-        plan && (
-          <Chip
-            label="Within HOS limits"
-            size="small"
-            sx={{
-              color: color.mint,
-              background: 'rgba(20, 210, 155, 0.10)',
-              border: '1px solid rgba(20, 210, 155, 0.35)',
-            }}
-          />
-        )
-      }
+      badge={plan && <VerdictBadge plan={plan} />}
     >
       {view === 'plan' && (
         <PlanView
           plan={plan}
           form={tripForm}
           planning={isPlanning}
-          selectedStop={selectedStop}
-          onSelectStop={selectStop}
+          selection={selection}
         />
       )}
       {view === 'logs' && (plan ? <LogsView plan={plan} /> : <NoPlanYet onPlan={() => setView('plan')} />)}

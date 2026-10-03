@@ -16,6 +16,7 @@ export const color = {
   tealDeep: '#008080',
   mint: '#14D29B',
   coral: '#F8485F',
+  coralText: '#FF6B7D', // coral for text: at least 4.5:1 on cards and tinted rows
   orange: '#FB923C',
   amber: '#FEAE37',
   sky: '#93E2EE',
@@ -24,7 +25,7 @@ export const color = {
   // Text.
   text: '#FFFFFF',
   textSecondary: '#C4D0D4',
-  textMuted: 'rgba(255, 255, 255, 0.45)',
+  textMuted: 'rgba(255, 255, 255, 0.55)', // at least 4.5:1 on cards and tinted rows
 
   // Lines and fills derived from the turquoise accent.
   border: 'rgba(64, 224, 208, 0.30)',
@@ -71,9 +72,13 @@ export const stopColor: Record<string, string> = {
   restart: color.amber,
 }
 
+// Text in a stop's colour: the same hues, with the coral lifted for contrast.
+export const stopTextColor: Record<string, string> = { ...stopColor, dropoff: color.coralText }
+
 export const layout = {
   rail: 64,
   topBar: 64,
+  topBarMobile: 56,
   bottomNav: 64,
   sidebar: 400,
   mobile: 768,

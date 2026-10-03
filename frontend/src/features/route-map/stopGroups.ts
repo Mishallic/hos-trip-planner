@@ -20,6 +20,11 @@ export interface StopGroup {
 // When several stops share a marker, the most significant one sets its look.
 const PRIORITY: StopKind[] = ['dropoff', 'pickup', 'restart', 'rest', 'fuel', 'break', 'pre_trip']
 
+/** The kind that should represent several stops shown as one mark. */
+export function mostSignificant(kinds: StopKind[]): StopKind {
+  return PRIORITY.find((kind) => kinds.includes(kind)) ?? kinds[0]
+}
+
 /** One marker per spot: a 10-hour rest and the next pre-trip become a single marker. */
 export function groupStops(stops: Stop[]): StopGroup[] {
   const groups: StopGroup[] = []
@@ -42,7 +47,7 @@ export function groupStops(stops: Stop[]): StopGroup[] {
 
   for (const group of groups) {
     const kinds = group.stops.map((i) => stops[i].kind)
-    group.mainKind = PRIORITY.find((kind) => kinds.includes(kind)) ?? kinds[0]
+    group.mainKind = mostSignificant(kinds)
     if (kinds.includes('dropoff')) group.kind = 'dropoff'
     else if (kinds.includes('pickup')) group.kind = 'pickup'
     else if (group.mile <= SAME_SPOT_MILES) group.kind = 'current' // where the truck is now

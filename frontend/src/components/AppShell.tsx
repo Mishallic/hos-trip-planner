@@ -23,6 +23,15 @@ interface AppShellProps {
 
 const MOBILE = `@media (max-width: ${layout.mobile - 1}px)`
 
+const visuallyHidden = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+} as const
+
 export function AppShell({ view, onViewChange, title, badge, children }: AppShellProps) {
   return (
     <Box
@@ -33,7 +42,7 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
         height: '100dvh',
         [MOBILE]: {
           gridTemplateColumns: '1fr',
-          gridTemplateRows: `56px 1fr auto ${layout.bottomNav}px`,
+          gridTemplateRows: `${layout.topBarMobile}px 1fr auto ${layout.bottomNav}px`,
           height: 'auto',
           minHeight: '100dvh',
         },
@@ -59,7 +68,12 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
         <Box sx={{ display: 'none', [MOBILE]: { display: 'flex' } }}>
           <BrandMark size={28} />
         </Box>
-        <Typography variant="h6" component="h1" sx={{ whiteSpace: 'nowrap' }}>
+        {/* On a phone the plan's badge needs the room; the name stays for screen readers. */}
+        <Typography
+          variant="h6"
+          component="h1"
+          sx={{ whiteSpace: 'nowrap', ...(badge ? { [MOBILE]: visuallyHidden } : {}) }}
+        >
           HOS Trip Planner
         </Typography>
         {title && (
@@ -76,7 +90,7 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
             {title}
           </Box>
         )}
-        <Box sx={{ ml: 'auto', flexShrink: 0 }}>{badge}</Box>
+        <Box sx={{ ml: 'auto', flexShrink: 0, minWidth: 0, [MOBILE]: { flexShrink: 1 } }}>{badge}</Box>
       </Box>
 
       <Box

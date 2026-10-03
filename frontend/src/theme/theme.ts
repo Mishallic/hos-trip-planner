@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material/styles'
 
-import { color, font, gradient, radius, shadow } from './tokens'
+import { color, font, gradient, layout, radius, shadow } from './tokens'
 
 // Dark only. No default MUI blue, no elevation shadows, no white cards.
 export const theme = createTheme({
@@ -34,8 +34,16 @@ export const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        // A solid colour under everything, so long pages never show white below the fold.
-        html: { backgroundColor: color.bgMid },
+        html: {
+          // A solid colour under everything, so long pages never show white below the fold.
+          backgroundColor: color.bgMid,
+          // Phones: keep anything scrolled into view (a focused stop row) clear of the
+          // sticky header and bottom navigation.
+          [`@media (max-width: ${layout.mobile - 1}px)`]: {
+            scrollPaddingTop: layout.topBarMobile + 8,
+            scrollPaddingBottom: layout.bottomNav + 8,
+          },
+        },
         'body, #root': { minHeight: '100%' },
         body: {
           background: gradient.page,
