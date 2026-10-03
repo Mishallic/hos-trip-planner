@@ -34,6 +34,9 @@ def activities(events) -> list[str]:
     return [e.activity.value for e in events]
 
 
+DAILY_STOPS = (Activity.REST, Activity.RESTART)
+
+
 class TestDriving:
     def test_short_trip(self):
         events = plan(2 * H, 3 * H)
@@ -432,8 +435,9 @@ class TestSeventyHourCycle:
 
 
 class TestRestartInsteadOfRest:
-    """When a 10-hour rest comes due but the cycle cannot cover the rest of the trip,
-    the 34-hour restart is taken in its place: the same driving, 10 hours sooner."""
+    """D19: when a 10-hour rest comes due but the cycle cannot cover the rest of the
+    trip, the 34-hour restart is taken in its place: the same driving, 10 hours sooner.
+    With more than a cycle of work ahead, only when keeping the hours saves nothing."""
 
     def test_no_rest_then_short_drive_then_restart(self):
         # 58 h + 11 h of driving = 69 h when the 11-hour limit hits. 1 h of cycle left,
@@ -487,6 +491,31 @@ class TestRestartInsteadOfRest:
             ("break", StopReason.BREAK_REQUIRED, 53 * H + 30),
             ("rest", StopReason.DRIVING_LIMIT, 57 * H),  # 11 h used, plenty of room
         ]
+
+    def test_with_more_than_a_cycle_ahead_the_driver_rests_and_keeps_the_cycle(self):
+        # 120 h of driving and the pickup from an empty cycle: 70 h plus one restart's
+        # 70 h cover it. Before D19 every 11-hour stop became a restart. Now the
+        # driver rests until one restart covers what is left (15 h left, 66 h to come).
+        events = plan(60 * H, 60 * H)
+
+        stops = [(e.activity.value, e.start_min) for e in events if e.activity in DAILY_STOPS]
+        assert stops[:5] == [
+            ("rest", 11 * H + 30),
+            ("rest", 33 * H),
+            ("rest", 54 * H + 30),
+            ("rest", 76 * H),
+            ("restart", 97 * H + 30),
+        ]
+        assert activities(events).count("restart") == 1
+
+    def test_restarts_at_once_when_the_hours_left_cannot_save_a_restart(self):
+        # 58.5 h + 11 h = 69.5 h at the first 11-hour stop, with 90 h of work to come:
+        # two restarts either way, so keeping the last 30 minutes would only add a
+        # 10-hour rest and a restart in the middle of the next shift.
+        events = plan(60 * H, 40 * H, cycle_used_min=58 * H + 30)
+
+        restarts = [e.start_min for e in events if e.activity is Activity.RESTART]
+        assert restarts == [11 * H + 30, 78 * H + 30]
 
 
 class TestCycleInput:

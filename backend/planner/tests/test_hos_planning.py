@@ -1,4 +1,4 @@
-"""Pre-trip inspections and fuel stops, planned with the real default policy.
+"""Pre-trip inspections, fuel stops and long trips, planned with the real default policy.
 
 "guide p. N" is the FMCSA Interstate Truck Driver's Guide to Hours of Service
 (April 2022). "DN" is a planning decision listed in the README.
@@ -20,6 +20,11 @@ NO_EARLY_FUEL = replace(DEFAULT_POLICY, fuel_before_rest=False)
 
 def count(events, activity: str) -> int:
     return sum(e.activity.value == activity for e in events)
+
+
+def drive_min(miles: float) -> int:
+    """Minutes of driving for a leg of `miles` at 55 mph, like hos_helpers.leg."""
+    return round(miles * 60 / 55)
 
 
 class TestPreTrip:
@@ -269,3 +274,37 @@ class TestEverythingTogether:
         events = plan(int(to_pickup_h * H), int(to_dropoff_h * H), int(cycle_used_h * H))
 
         assert events[-1].activity is Activity.DROPOFF
+
+
+class TestRestartsOnLongTrips:
+    """D19: more than a cycle of work ahead takes the fewest 34-hour restarts, not
+    one at every 11-hour stop."""
+
+    @pytest.mark.parametrize(
+        ("to_pickup_miles", "to_dropoff_miles", "restarts_before_d19"),
+        [(3300, 3300, 6), (2000, 2300, 2)],
+    )
+    def test_one_restart_from_an_empty_cycle(
+        self, to_pickup_miles, to_dropoff_miles, restarts_before_d19
+    ):
+        # 6,600 mi is about 130 h on duty before the last drive ends, 4,300 mi about
+        # 85 h: more than the 70 h the driver starts with, so at least one restart,
+        # and within 70 h plus one restart's 70 h, so one is enough.
+        events = plan(drive_min(to_pickup_miles), drive_min(to_dropoff_miles))
+
+        assert count(events, "restart") == 1 < restarts_before_d19
+
+    def test_the_cycle_is_driven_out_before_the_restart(self):
+        # 6,600 mi: one restart covers the trip only if all 70 h of the first cycle
+        # are used, so the driver keeps going until the cycle runs out mid-shift.
+        events = plan(drive_min(3300), drive_min(3300))
+
+        restart = first(events, "restart")
+        on_duty_before = sum(
+            e.duration_min
+            for e in events
+            if e.end_min <= restart.start_min
+            and e.status in (DutyStatus.ON_DUTY, DutyStatus.DRIVING)
+        )
+        assert on_duty_before == DEFAULT_POLICY.cycle_limit_min
+        assert restart.reason is StopReason.CYCLE_LIMIT

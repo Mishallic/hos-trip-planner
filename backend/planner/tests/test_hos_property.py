@@ -2,17 +2,19 @@
 
 Hypothesis generates trips across the whole input range and every timeline goes
 through the same independent checks as the hand-written tests (hos_helpers). The
-run is derandomized, so CI sees the same examples every time.
+run is derandomized, so CI sees the same examples every time. The restart rule (D19)
+is also compared with the rule it replaced: never more restarts, never a later end.
 """
 
+import itertools
 import time
 from dataclasses import astuple
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from planner.domain.hos_engine import plan_trip
-from planner.domain.models import Leg, TripInput
+from planner.domain.hos_engine import _Scheduler, plan_trip
+from planner.domain.models import Activity, Event, Leg, TripInput
 from planner.domain.policy import DEFAULT_POLICY, HOUR
 
 from .hos_helpers import check_all
@@ -78,6 +80,80 @@ def test_five_thousand_mile_trip_plans_quickly():
     best_s = min(_timed(plan_trip, trip) for _ in range(3))
 
     assert best_s < 0.1, f"took {best_s * 1000:.1f} ms"
+
+
+class PreviousRestartRule(_Scheduler):
+    """The engine before D19, kept only as the yardstick for the tests below.
+
+    At every 10-hour rest where the cycle left could not cover the work still to come
+    (counting one pre-trip), it restarted instead, even with several cycles of work
+    ahead, so long trips restarted after every shift.
+    """
+
+    def _restart_instead_of_rest(self) -> bool:
+        if self.drive_left_min == 0:
+            return False
+        policy = self.policy
+        needed_min = self.drive_left_min + policy.pre_trip_min
+        needed_min += self._fuel_stops_left() * policy.fuel_stop_min
+        if not self.pickup_done and self.trip.to_dropoff.drive_min > 0:
+            needed_min += policy.pickup_min
+        return policy.cycle_limit_min - self.clocks.cycle_used_min < needed_min
+
+
+def restarts_and_end(events: list[Event]) -> tuple[int, int]:
+    return sum(e.activity is Activity.RESTART for e in events), events[-1].end_min
+
+
+def no_worse_than_before_d19(trip: TripInput) -> str | None:
+    """None, or why the plan takes more restarts or ends later than before D19."""
+    now = plan_trip(trip)
+    check_all(now, trip, DEFAULT_POLICY)
+    restarts, end = restarts_and_end(now)
+    restarts_before, end_before = restarts_and_end(PreviousRestartRule(trip, DEFAULT_POLICY).run())
+    if restarts <= restarts_before and end <= end_before:
+        return None
+    before = f"before D19 {restarts_before} restarts, ending at {end_before} min"
+    return f"{trip}: {restarts} restarts, ending at {end} min; {before}"
+
+
+long_trips = st.builds(
+    TripInput,
+    to_pickup=st.builds(routed_leg, st.one_of(st.just(0.0), st.floats(1, 4000)), router_mph),
+    to_dropoff=st.builds(routed_leg, st.floats(1, 4500), router_mph),
+    cycle_used_min=st.integers(min_value=0, max_value=70 * 4).map(lambda quarters: quarters * 15),
+)
+
+
+@PROPERTY_SETTINGS
+@given(trip=st.one_of(trips, long_trips))
+def test_d19_never_adds_a_restart_or_time_to_a_trip(trip):
+    assert no_worse_than_before_d19(trip) is None
+
+
+def test_d19_on_a_grid_of_trips():
+    # Short to coast-to-coast-and-back legs, at three speeds, from an empty cycle to a full one.
+    grid = itertools.product(
+        [0, 300, 1500, 3300],  # miles to the pickup
+        [400, 1800, 3000, 4500],  # miles to the drop-off
+        [0, 30 * HOUR, 52 * HOUR, 58 * HOUR, 63 * HOUR, 69 * HOUR + 30, 70 * HOUR],  # cycle used
+        [50, 55, 62],  # mph
+    )
+    worse = [
+        problem
+        for pickup, dropoff, used, mph in grid
+        if (
+            problem := no_worse_than_before_d19(
+                TripInput(steady_leg(pickup, mph), steady_leg(dropoff, mph), used)
+            )
+        )
+    ]
+
+    assert worse == []
+
+
+def steady_leg(miles: float, mph: float) -> Leg:
+    return Leg(distance_miles=miles, drive_min=round(miles / mph * 60))
 
 
 def _timed(func, *args) -> float:

@@ -158,10 +158,9 @@ class _Scheduler:
                 # 70 hours on duty: 34 consecutive hours off restart the cycle (guide p. 11, D11).
                 self._rest(Activity.RESTART, self.policy.restart_min, reason)
             case StopReason.DRIVING_LIMIT | StopReason.DUTY_WINDOW:
-                cycle_left_min = self.policy.cycle_limit_min - self.clocks.cycle_used_min
-                if cycle_left_min < self._cycle_needed_min():
-                    # The cycle will run out before the last drive anyway, so restart
-                    # now instead of resting 10 hours first. Same driving, 10 hours sooner.
+                if self._restart_instead_of_rest():
+                    # D19: a restart is coming anyway, so take it now instead of
+                    # resting 10 hours first. Same driving, 10 hours sooner.
                     self._rest(Activity.RESTART, self.policy.restart_min, StopReason.CYCLE_LIMIT)
                 else:
                     # 10 consecutive hours off before driving again (guide p. 6-7).
@@ -234,6 +233,29 @@ class _Scheduler:
         miles_left = self.trip.total_miles - self.mile
         return max(0, math.ceil((miles_since_fuel + miles_left) / interval - EPSILON) - 1)
 
+    def _restart_instead_of_rest(self) -> bool:
+        """D19: take the 34-hour restart now, in place of this 10-hour rest?
+
+        Only when the cycle cannot cover the work still to come and keeping the hours
+        left would not save a restart. With one cycle of work or less ahead, that is
+        always so: one restart covers the rest of the trip. With more, the driver
+        rests and drives the cycle out, unless what is left of it is too little to
+        save a restart anyway, e.g. less than the next shift's pre-trip.
+        """
+        policy = self.policy
+        cycle_left_min = policy.cycle_limit_min - self.clocks.cycle_used_min
+        needed_min = self._cycle_needed_min()
+        if cycle_left_min >= needed_min:
+            return False
+        restarts_if_now = math.ceil(needed_min / policy.cycle_limit_min)
+        # Kept hours that run out during the next shift stop it there: after that
+        # restart, the shift starts over with a pre-trip of its own.
+        cut_short_min = policy.pre_trip_min if cycle_left_min < policy.duty_window_min else 0
+        restarts_if_later = math.ceil(
+            (needed_min + cut_short_min - cycle_left_min) / policy.cycle_limit_min
+        )
+        return restarts_if_now <= restarts_if_later
+
     def _cycle_needed_min(self) -> int:
         """A lower bound on the on-duty minutes still needed before the last drive ends.
 
@@ -243,7 +265,10 @@ class _Scheduler:
         if self.drive_left_min == 0:
             return 0
         needed_min = self.drive_left_min
-        needed_min += self.policy.pre_trip_min  # the next duty period starts with one (D4)
+        # Each duty period starts with a pre-trip (D4) and drives at most 11 hours.
+        max_driving_min = self.policy.max_driving_min
+        duty_periods = math.ceil(self.drive_left_min / max_driving_min) if max_driving_min else 1
+        needed_min += duty_periods * self.policy.pre_trip_min
         needed_min += self._fuel_stops_left() * self.policy.fuel_stop_min
         if not self.pickup_done and self.trip.to_dropoff.drive_min > 0:
             needed_min += self.policy.pickup_min
