@@ -1,46 +1,85 @@
-import { Chip, Typography } from '@mui/material'
+import { Box, Button, Chip, Typography } from '@mui/material'
+import { FileText } from 'lucide-react'
 import { useState } from 'react'
 
-import type { TripPlan } from './api/types'
 import { AppShell, type View } from './components/AppShell'
 import { DirectionsView } from './features/directions/DirectionsView'
 import { LogsView } from './features/logs/LogsView'
 import { PlanView } from './features/plan/PlanView'
-import sample from './fixtures/plan-multi-day.json'
+import { TripForm } from './features/trip-form/TripForm'
+import { useTripPlan } from './state/useTripPlan'
 import { color } from './theme/tokens'
-
-// Until the form talks to the API (chunk 15), the shell shows a real saved plan.
-const plan = sample as TripPlan
 
 function App() {
   const [view, setView] = useState<View>('plan')
-  const { summary } = plan
+  const [editing, setEditing] = useState(false)
+  const { form, plan, error, isPlanning, submit } = useTripPlan()
+
+  const tripForm = (
+    <TripForm
+      initial={form}
+      collapsed={Boolean(plan) && !editing && !isPlanning}
+      onExpand={() => setEditing(true)}
+      planning={isPlanning}
+      error={error}
+      onSubmit={(next) => {
+        submit(next)
+        setEditing(false)
+      }}
+    />
+  )
 
   return (
     <AppShell
       view={view}
       onViewChange={setView}
       title={
-        <Typography noWrap sx={{ fontSize: 14, fontWeight: 500, color: 'inherit' }}>
-          {summary.from} → {summary.pickup} → {summary.dropoff}
-        </Typography>
+        plan && (
+          <Typography noWrap sx={{ fontSize: 14, fontWeight: 500, color: 'inherit' }}>
+            {plan.summary.from} → {plan.summary.pickup} → {plan.summary.dropoff}
+          </Typography>
+        )
       }
       badge={
-        <Chip
-          label="Within HOS limits"
-          size="small"
-          sx={{
-            color: color.mint,
-            background: 'rgba(20, 210, 155, 0.10)',
-            border: '1px solid rgba(20, 210, 155, 0.35)',
-          }}
-        />
+        plan && (
+          <Chip
+            label="Within HOS limits"
+            size="small"
+            sx={{
+              color: color.mint,
+              background: 'rgba(20, 210, 155, 0.10)',
+              border: '1px solid rgba(20, 210, 155, 0.35)',
+            }}
+          />
+        )
       }
     >
-      {view === 'plan' && <PlanView plan={plan} />}
-      {view === 'logs' && <LogsView plan={plan} />}
-      {view === 'directions' && <DirectionsView plan={plan} />}
+      {view === 'plan' && <PlanView plan={plan} form={tripForm} planning={isPlanning} />}
+      {view === 'logs' && (plan ? <LogsView plan={plan} /> : <NoPlanYet onPlan={() => setView('plan')} />)}
+      {view === 'directions' &&
+        (plan ? <DirectionsView plan={plan} /> : <NoPlanYet onPlan={() => setView('plan')} />)}
     </AppShell>
+  )
+}
+
+function NoPlanYet({ onPlan }: { onPlan: () => void }) {
+  return (
+    <Box sx={{ height: '100%', display: 'grid', placeItems: 'center', p: 3, textAlign: 'center' }}>
+      <Box>
+        <Box sx={{ color: color.turquoise, display: 'flex', justifyContent: 'center', mb: 1.5 }}>
+          <FileText size={34} strokeWidth={1.6} />
+        </Box>
+        <Typography variant="h6" component="p">
+          Plan a trip first
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 0.75, mb: 2 }}>
+          Logs and directions appear once the trip is planned.
+        </Typography>
+        <Button variant="contained" onClick={onPlan}>
+          Go to the trip form
+        </Button>
+      </Box>
+    </Box>
   )
 }
 

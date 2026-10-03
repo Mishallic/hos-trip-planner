@@ -1,14 +1,12 @@
 import {
   Box,
-  Button,
   Card,
   Chip,
   Stack,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material'
-import { CircleCheck, ListChecks, Route, Truck } from 'lucide-react'
+import { CircleCheck, ListChecks, Map as MapIcon, Truck } from 'lucide-react'
 import { type ReactNode, useMemo } from 'react'
 
 import type { Clocks, Stop, TripPlan } from '../../api/types'
@@ -19,29 +17,37 @@ import { StopIcon } from './StopIcon'
 
 const MOBILE = `@media (max-width: ${layout.mobile - 1}px)`
 
-export function PlanView({ plan }: { plan: TripPlan }) {
+interface PlanViewProps {
+  plan?: TripPlan
+  form: ReactNode // the trip form, full or collapsed to one line
+  planning: boolean
+}
+
+export function PlanView({ plan, form, planning }: PlanViewProps) {
   return (
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: `${layout.sidebar}px 1fr`,
+        gridTemplateColumns: `${layout.sidebar}px minmax(0, 1fr)`,
         height: '100%',
         minHeight: 0,
-        [MOBILE]: { gridTemplateColumns: '1fr', height: 'auto' },
+        [MOBILE]: { gridTemplateColumns: 'minmax(0, 1fr)', height: 'auto' },
       }}
     >
       <Box
         sx={{
           overflowY: 'auto',
+          minWidth: 0,
           p: 2,
           borderRight: `1px solid ${color.borderSoft}`,
-          [MOBILE]: { borderRight: 0, overflow: 'visible', order: 2 },
+          // Mobile: the form comes first until there is a plan, then the results do.
+          [MOBILE]: { borderRight: 0, overflow: 'visible', order: plan ? 2 : 1 },
         }}
       >
         <Stack spacing={2}>
-          <TripFormCard plan={plan} />
-          <VerdictCard plan={plan} />
-          <StopList stops={plan.stops} />
+          {form}
+          {plan && <VerdictCard plan={plan} />}
+          {plan && <StopList stops={plan.stops} />}
         </Stack>
       </Box>
 
@@ -52,11 +58,11 @@ export function PlanView({ plan }: { plan: TripPlan }) {
           minHeight: 0,
           p: 2,
           gap: 2,
-          [MOBILE]: { order: 1, gridTemplateRows: '320px auto', pb: 0 },
+          [MOBILE]: { order: plan ? 1 : 2, gridTemplateRows: '320px auto', pb: plan ? 0 : 2 },
         }}
       >
-        <MapPreview plan={plan} />
-        <TimelineStrip plan={plan} />
+        {plan ? <MapPreview plan={plan} /> : <MapEmpty planning={planning} />}
+        {plan && <TimelineStrip plan={plan} />}
       </Box>
     </Box>
   )
@@ -68,7 +74,7 @@ function CardHeading({
   subtitle,
   hint,
 }: {
-  Icon: typeof Route
+  Icon: typeof Truck
   title: string
   subtitle: string
   hint?: string
@@ -131,40 +137,6 @@ function Badge({ label, tone = color.turquoise }: { label: string; tone?: string
     >
       {label}
     </Box>
-  )
-}
-
-/** Placeholder: chunk 15 makes this the real form. */
-function TripFormCard({ plan }: { plan: TripPlan }) {
-  const { summary } = plan
-  return (
-    <Card sx={{ p: 2.5 }}>
-      <CardHeading Icon={Route} title="Trip" subtitle="Where the truck is, and where it goes" />
-      <Stack spacing={1.5}>
-        <TextField size="small" label="Current location" value={summary.from} slotProps={{ input: { readOnly: true } }} />
-        <TextField size="small" label="Pickup" value={summary.pickup} slotProps={{ input: { readOnly: true } }} />
-        <TextField size="small" label="Drop-off" value={summary.dropoff} slotProps={{ input: { readOnly: true } }} />
-        <Stack direction="row" spacing={1.5}>
-          <TextField
-            size="small"
-            label="Cycle used (h)"
-            value="20"
-            slotProps={{ input: { readOnly: true } }}
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            size="small"
-            label="Start"
-            value={clockTime(summary.start)}
-            slotProps={{ input: { readOnly: true } }}
-            sx={{ flex: 1.4 }}
-          />
-        </Stack>
-        <Button variant="contained" size="large" sx={{ py: 1.25 }}>
-          Plan trip
-        </Button>
-      </Stack>
-    </Card>
   )
 }
 
@@ -276,6 +248,37 @@ function StopList({ stops }: { stops: Stop[] }) {
         ))}
       </Stack>
     </Card>
+  )
+}
+
+function MapEmpty({ planning }: { planning: boolean }) {
+  return (
+    <Box
+      sx={{
+        borderRadius: `${radius.panel}px`,
+        border: `1px dashed ${color.border}`,
+        background: `radial-gradient(120% 100% at 35% 25%, #2A4352 0%, #22333B 50%, #1A2830 100%)`,
+        display: 'grid',
+        placeItems: 'center',
+        textAlign: 'center',
+        p: 3,
+        minHeight: 0,
+      }}
+    >
+      <Box sx={{ maxWidth: 360 }}>
+        <Box sx={{ color: color.turquoise, display: 'flex', justifyContent: 'center', mb: 1.5 }}>
+          <MapIcon size={34} strokeWidth={1.6} />
+        </Box>
+        <Typography variant="h6" component="p">
+          {planning ? 'Planning the trip…' : 'Your route appears here'}
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 0.75 }}>
+          {planning
+            ? 'Routing, placing every stop under the hours-of-service rules, and drawing the logs.'
+            : 'Enter where the truck is, the pickup and the drop-off. Every rest, break and fuel stop is placed for you.'}
+        </Typography>
+      </Box>
+    </Box>
   )
 }
 
