@@ -29,5 +29,6 @@
 - [ ] README
 
 ## Later
+- profile the ~700ms compute stage on Vercel
 - recent trips (needs a db)
 - split sleeper berth

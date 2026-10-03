@@ -1,23 +1,46 @@
-import { useEffect, useState } from 'react'
+import { Chip, Typography } from '@mui/material'
+import { useState } from 'react'
 
-type ApiStatus = 'checking' | 'ok' | 'down'
+import type { TripPlan } from './api/types'
+import { AppShell, type View } from './components/AppShell'
+import { DirectionsView } from './features/directions/DirectionsView'
+import { LogsView } from './features/logs/LogsView'
+import { PlanView } from './features/plan/PlanView'
+import sample from './fixtures/plan-multi-day.json'
+import { color } from './theme/tokens'
+
+// Until the form talks to the API (chunk 15), the shell shows a real saved plan.
+const plan = sample as TripPlan
 
 function App() {
-  const [apiStatus, setApiStatus] = useState<ApiStatus>('checking')
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((body: { status: string }) => setApiStatus(body.status === 'ok' ? 'ok' : 'down'))
-      .catch(() => setApiStatus('down'))
-  }, [])
+  const [view, setView] = useState<View>('plan')
+  const { summary } = plan
 
   return (
-    <main>
-      <h1>HOS Trip Planner</h1>
-      <p>Plan a trip and get hours-of-service compliant stops and daily logs.</p>
-      <p>API: {apiStatus}</p>
-    </main>
+    <AppShell
+      view={view}
+      onViewChange={setView}
+      title={
+        <Typography noWrap sx={{ fontSize: 14, fontWeight: 500, color: 'inherit' }}>
+          {summary.from} → {summary.pickup} → {summary.dropoff}
+        </Typography>
+      }
+      badge={
+        <Chip
+          label="Within HOS limits"
+          size="small"
+          sx={{
+            color: color.mint,
+            background: 'rgba(20, 210, 155, 0.10)',
+            border: '1px solid rgba(20, 210, 155, 0.35)',
+          }}
+        />
+      }
+    >
+      {view === 'plan' && <PlanView plan={plan} />}
+      {view === 'logs' && <LogsView plan={plan} />}
+      {view === 'directions' && <DirectionsView plan={plan} />}
+    </AppShell>
   )
 }
 
