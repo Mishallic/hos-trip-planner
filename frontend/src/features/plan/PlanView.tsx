@@ -4,6 +4,7 @@ import { lazy, type ReactNode, Suspense, useEffect, useRef } from 'react'
 
 import type { TripPlan } from '../../api/types'
 import type { StopSelection } from '../../state/selection'
+import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { color, gradient, layout, radius } from '../../theme/tokens'
 import { StopList } from '../itinerary/StopList'
 import { TimelineStrip } from '../itinerary/TimelineStrip'
@@ -14,9 +15,11 @@ import { VerdictCard } from '../trip-summary/VerdictCard'
 const RouteMap = lazy(() => import('../route-map/RouteMap'))
 
 const MOBILE = `@media (max-width: ${layout.mobile - 1}px)`
+/** Too narrow for the sidebar beside a useful map: the map goes on top, the sidebar under it. */
+const STACKED = '@media (max-width: 1023px)'
 // The clocks stay pinned at the top of the sidebar while the stops scroll under
 // them, so selecting a stop never scrolls them away. Only where there is room.
-const PIN_CLOCKS = `@media (min-width: ${layout.mobile}px) and (min-height: 600px)`
+const PIN_CLOCKS = '@media (min-width: 1024px) and (min-height: 600px)'
 
 interface PlanViewProps {
   plan?: TripPlan
@@ -50,7 +53,9 @@ export function PlanView({ plan, form, planning, selection }: PlanViewProps) {
         gridTemplateColumns: `${layout.sidebar}px minmax(0, 1fr)`,
         height: '100%',
         minHeight: 0,
-        [MOBILE]: { gridTemplateColumns: 'minmax(0, 1fr)', height: 'auto' },
+        // The view scrolls as one; on a phone the page itself does.
+        [STACKED]: { gridTemplateColumns: 'minmax(0, 1fr)', gridAutoRows: 'max-content', alignContent: 'start', overflowY: 'auto' },
+        [MOBILE]: { height: 'auto', overflowY: 'visible' },
       }}
     >
       <Box
@@ -63,11 +68,13 @@ export function PlanView({ plan, form, planning, selection }: PlanViewProps) {
           borderRight: `1px solid ${color.borderSoft}`,
           [PIN_CLOCKS]: { scrollPaddingTop: 'calc(var(--pinned-height, 0px) + 12px)' },
           // Mobile: the form comes first until there is a plan, then the results do.
-          [MOBILE]: { borderRight: 0, overflow: 'visible', order: plan ? 2 : 1 },
+          [STACKED]: { borderRight: 0, overflow: 'visible', order: plan ? 2 : 1 },
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {form}
+          {/* The results can fail to draw; the form above them never goes away. */}
+          <ErrorBoundary key={planIdentity(plan)}>
           {plan && <VerdictCard plan={plan} />}
           {plan && (
             <Box
@@ -96,6 +103,7 @@ export function PlanView({ plan, form, planning, selection }: PlanViewProps) {
             </Box>
           )}
           {plan && <StopList stops={plan.stops} selection={selection} />}
+          </ErrorBoundary>
         </Box>
       </Box>
 
@@ -107,9 +115,11 @@ export function PlanView({ plan, form, planning, selection }: PlanViewProps) {
           minWidth: 0,
           p: 2,
           gap: 2,
-          [MOBILE]: { order: plan ? 1 : 2, gridTemplateRows: '320px auto', pb: plan ? 0 : 2 },
+          [STACKED]: { order: plan ? 1 : 2, gridTemplateRows: '400px auto', pb: plan ? 0 : 2 },
+          [MOBILE]: { gridTemplateRows: '320px auto' },
         }}
       >
+        <ErrorBoundary key={planIdentity(plan)}>
         {plan ? (
           <Suspense fallback={<MapEmpty planning />}>
             <RouteMap plan={plan} selection={selection} />
@@ -118,6 +128,7 @@ export function PlanView({ plan, form, planning, selection }: PlanViewProps) {
           <MapEmpty planning={planning} />
         )}
         {plan && <TimelineStrip plan={plan} selection={selection} />}
+        </ErrorBoundary>
       </Box>
     </Box>
   )
@@ -153,3 +164,5 @@ function MapEmpty({ planning }: { planning: boolean }) {
     </Box>
   )
 }
+
+const planIdentity = (plan?: TripPlan) => (plan ? `${plan.summary.start}|${plan.summary.dropoff_arrival}` : 'none')

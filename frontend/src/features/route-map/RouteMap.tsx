@@ -96,8 +96,26 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
     }
     markers.current = created
 
-    // The map's box can change size (columns, mobile): keep Leaflet in step.
-    const observer = new ResizeObserver(() => instance.invalidateSize())
+    // The map's box can change size (columns, mobile): keep Leaflet in step. When the
+    // layout itself changes (side by side to stacked), fit the route again, unless the
+    // user has already moved the map.
+    const bounds = L.latLngBounds(line)
+    let moved = false
+    instance.on('dragstart', () => {
+      moved = true
+    })
+    let size = { width: element.current.clientWidth, height: element.current.clientHeight }
+    const changed = (before: number, after: number) => Math.abs(after - before) > before * 0.15
+    const observer = new ResizeObserver(() => {
+      instance.invalidateSize()
+      const box = element.current
+      if (!box) return
+      const now = { width: box.clientWidth, height: box.clientHeight }
+      if (!moved && (changed(size.width, now.width) || changed(size.height, now.height))) {
+        instance.fitBounds(bounds, { padding: [48, 48] })
+      }
+      size = now
+    })
     observer.observe(element.current)
     return () => {
       stopWatchingTiles()
@@ -133,6 +151,9 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
     if (!map.current || !selectedGroup) return
     const zoom = Math.max(map.current.getZoom(), CENTRE_MIN_ZOOM)
     map.current.setView([selectedGroup.lat, selectedGroup.lon], zoom, { animate: true })
+    // In a stacked layout the map may be scrolled out of sight: bring it back.
+    const box = element.current?.getBoundingClientRect()
+    if (box && (box.bottom < 80 || box.top > window.innerHeight)) element.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [centreRequest, centred, markCentred, selectedGroup])
 
   return (

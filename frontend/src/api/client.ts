@@ -56,13 +56,36 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T
 }
 
-export function planTrip(body: PlanRequest, signal?: AbortSignal): Promise<TripPlan> {
-  return request<TripPlan>('trips/plan', {
+export async function planTrip(body: PlanRequest, signal?: AbortSignal): Promise<TripPlan> {
+  const plan = await request<TripPlan>('trips/plan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     signal,
   })
+  // A plan the views cannot draw (an HTML page from a misrouted /api, a cut-off body)
+  // becomes an error the form shows, never a blank page.
+  if (!isPlan(plan)) {
+    throw new ApiError(502, { error: { code: 'bad_response', message: 'The server sent a plan that could not be read. Try again.' } })
+  }
+  return plan
+}
+
+function isPlan(value: unknown): value is TripPlan {
+  const plan = value as Partial<TripPlan> | null
+  return Boolean(
+    plan &&
+      plan.summary &&
+      typeof plan.summary.start === 'string' &&
+      Array.isArray(plan.stops) &&
+      Array.isArray(plan.timeline) &&
+      plan.timeline.length > 0 &&
+      Array.isArray(plan.logs) &&
+      plan.logs.length > 0 &&
+      Array.isArray(plan.route?.legs) &&
+      typeof plan.route?.polyline === 'string' &&
+      plan.log_header,
+  )
 }
 
 export async function searchPlaces(query: string, signal?: AbortSignal): Promise<PlaceOption[]> {

@@ -1,4 +1,4 @@
-import { Box, ButtonBase, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, ButtonBase, LinearProgress, Stack, Tooltip, Typography } from '@mui/material'
 import { FileText, Map, Navigation } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -18,6 +18,8 @@ interface AppShellProps {
   onViewChange: (view: View) => void
   title?: ReactNode
   badge?: ReactNode
+  /** A trip is being planned: a thin bar runs under the header. */
+  busy?: boolean
   children: ReactNode
 }
 
@@ -32,7 +34,7 @@ const visuallyHidden = {
   whiteSpace: 'nowrap',
 } as const
 
-export function AppShell({ view, onViewChange, title, badge, children }: AppShellProps) {
+export function AppShell({ view, onViewChange, title, badge, busy = false, children }: AppShellProps) {
   return (
     <Box
       sx={{
@@ -55,6 +57,7 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
         component="header"
         data-no-print
         sx={{
+          position: 'relative',
           gridColumn: 2,
           display: 'flex',
           alignItems: 'center',
@@ -94,6 +97,12 @@ export function AppShell({ view, onViewChange, title, badge, children }: AppShel
           </Box>
         )}
         <Box sx={{ ml: 'auto', flexShrink: 0, minWidth: 0, [MOBILE]: { flexShrink: 1 } }}>{badge}</Box>
+        {busy && (
+          <LinearProgress
+            aria-label="Planning the trip"
+            sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 2, background: 'transparent' }}
+          />
+        )}
       </Box>
 
       <Box

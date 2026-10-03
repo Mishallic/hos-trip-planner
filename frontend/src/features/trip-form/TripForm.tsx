@@ -129,6 +129,12 @@ function ExpandedTrip({
       </Stack>
 
       <Stack spacing={1.75}>
+        {/* First, where it is seen at once, even on a phone. Field errors sit on their field. */}
+        {error && !Object.keys(serverErrors(error)).length && (
+          <Alert severity={error.status === 422 ? 'warning' : 'error'} variant="outlined" role="alert">
+            {error.message}
+          </Alert>
+        )}
         <PlaceInput label="Current location" value={form.current} onChange={(current) => update({ current })} error={errors.current} autoFocus={!initial.current.label} />
         <PlaceInput label="Pickup" value={form.pickup} onChange={(pickup) => update({ pickup })} error={errors.pickup} />
         <PlaceInput label="Drop-off" value={form.dropoff} onChange={(dropoff) => update({ dropoff })} error={errors.dropoff} />
@@ -196,12 +202,6 @@ function ExpandedTrip({
             </Box>
           </Stack>
         </Collapse>
-
-        {error && !Object.keys(serverErrors(error)).length && (
-          <Alert severity={error.status === 422 ? 'warning' : 'error'} variant="outlined">
-            {error.message}
-          </Alert>
-        )}
 
         <Button type="submit" variant="contained" size="large" disabled={planning} sx={{ py: 1.25 }}>
           {planning ? 'Planning…' : 'Plan trip'}

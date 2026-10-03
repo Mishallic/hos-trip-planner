@@ -2,7 +2,9 @@ import { Box, Button, Typography } from '@mui/material'
 import { FileText } from 'lucide-react'
 import { useState } from 'react'
 
+import type { ApiError } from './api/client'
 import { AppShell, type View } from './components/AppShell'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { DirectionsView } from './features/directions/DirectionsView'
 import { LogsView } from './features/logs/LogsView'
 import { PlanView } from './features/plan/PlanView'
@@ -18,6 +20,7 @@ function App() {
   const { form, plan, error, isPlanning, submit } = useTripPlan()
   // One selected stop for the map, timeline, list and clocks. A new plan clears it.
   const selection = useStopSelection(plan)
+  const planKey = plan ? `${plan.summary.start}|${plan.summary.dropoff_arrival}|${plan.logs.length}` : 'none'
 
   // On a phone the page itself scrolls: a new view starts at its top, not halfway
   // down where the last one was left.
@@ -52,44 +55,49 @@ function App() {
         )
       }
       badge={plan && <VerdictBadge plan={plan} />}
+      busy={isPlanning}
     >
-      {view === 'plan' && (
-        <PlanView
-          plan={plan}
-          form={tripForm}
-          planning={isPlanning}
-          selection={selection}
-        />
+      {view === 'plan' && <PlanView plan={plan} form={tripForm} planning={isPlanning} selection={selection} />}
+      {view !== 'plan' && (
+        // A new plan (Back, Forward, a new trip) starts the view afresh, error or not.
+        <ErrorBoundary key={`${view}|${planKey}`}>
+          {!plan ? (
+            <NoPlanYet planning={isPlanning} error={error} onPlan={() => changeView('plan')} />
+          ) : view === 'logs' ? (
+            <LogsView plan={plan} selection={selection} />
+          ) : (
+            <DirectionsView plan={plan} selection={selection} />
+          )}
+        </ErrorBoundary>
       )}
-      {view === 'logs' &&
-        (plan ? (
-          // A new plan (Back, Forward, a new trip) opens its own first day.
-          <LogsView key={`${plan.summary.start}|${plan.summary.dropoff_arrival}|${plan.logs.length}`} plan={plan} selection={selection} />
-        ) : (
-          <NoPlanYet onPlan={() => changeView('plan')} />
-        ))}
-      {view === 'directions' &&
-        (plan ? <DirectionsView plan={plan} /> : <NoPlanYet onPlan={() => changeView('plan')} />)}
     </AppShell>
   )
 }
 
-function NoPlanYet({ onPlan }: { onPlan: () => void }) {
+/** Logs and directions before there is a plan to show: why, and the way to the form. */
+function NoPlanYet({ planning, error, onPlan }: { planning: boolean; error: ApiError | null; onPlan: () => void }) {
+  const [title, text] = planning
+    ? ['Planning the trip…', 'Logs and directions appear as soon as the plan is ready.']
+    : error
+      ? ['The trip could not be planned', error.message]
+      : ['Plan a trip first', 'Logs and directions appear once the trip is planned.']
   return (
     <Box sx={{ height: '100%', display: 'grid', placeItems: 'center', p: 3, textAlign: 'center' }}>
-      <Box>
-        <Box sx={{ color: color.turquoise, display: 'flex', justifyContent: 'center', mb: 1.5 }}>
+      <Box sx={{ maxWidth: 420 }} role={error && !planning ? 'alert' : undefined}>
+        <Box sx={{ color: error && !planning ? color.amber : color.turquoise, display: 'flex', justifyContent: 'center', mb: 1.5 }}>
           <FileText size={34} strokeWidth={1.6} />
         </Box>
         <Typography variant="h6" component="p">
-          Plan a trip first
+          {title}
         </Typography>
         <Typography variant="body2" sx={{ mt: 0.75, mb: 2 }}>
-          Logs and directions appear once the trip is planned.
+          {text}
         </Typography>
-        <Button variant="contained" onClick={onPlan}>
-          Go to the trip form
-        </Button>
+        {!planning && (
+          <Button variant="contained" onClick={onPlan}>
+            Go to the trip form
+          </Button>
+        )}
       </Box>
     </Box>
   )
