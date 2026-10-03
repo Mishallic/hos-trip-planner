@@ -52,6 +52,23 @@ export const FALLBACK_AFTER_ERRORS = 3
 export const FALLBACK_AFTER_MS = 8000
 
 /**
+ * Fetch one tile and fail on any HTTP error. An <img> cannot do this: Stadia
+ * answers an unauthorised request with HTTP 401 *and a PNG* ("401 Error"), which
+ * an image element loads happily, so the error would never surface.
+ */
+export async function fetchTileImage(
+  url: string,
+  fetchFn: typeof fetch = fetch,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const response = await fetchFn(url, { mode: 'cors', credentials: 'omit', signal })
+  if (!response.ok) throw new Error(`tile HTTP ${response.status}`)
+  const type = response.headers.get('content-type') ?? ''
+  if (!type.startsWith('image/')) throw new Error(`tile is not an image (${type || 'no type'})`)
+  return response.blob()
+}
+
+/**
  * Decides when to give up on the primary tiles. Errors only count while they come
  * in a row: one tile that loads proves the server works and resets the count.
  * A server that never answers at all is caught by the load timeout instead.
