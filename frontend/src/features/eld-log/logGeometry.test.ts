@@ -23,7 +23,7 @@ import {
   stopOnSheet,
 } from './logGeometry'
 
-// The guide's completed grid (p. 18-19): John Doe, Richmond, VA to Newark, NJ.
+// The guide's completed grid (p. 18): John Doe, Richmond, VA to Newark, NJ.
 const doe = johnDoe as DailyLog
 const SHEETS: [string, DailyLog][] = [
   ['John Doe', doe],
