@@ -63,6 +63,7 @@ choices. Code and tests cite them as D1, D2, ...
 - Place search: [Photon](https://photon.komoot.io) by komoot, with [Nominatim](https://nominatim.org) as a fallback. Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.
 - Stop names: place data from [GeoNames](https://www.geonames.org), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `backend/scripts/build_places.py` builds the bundled file (`places_us_ca_mx.tsv.gz`) from GeoNames `cities1000`, keeping places in the US, Canada and Mexico with at least 1,000 people.
 - Time zones: [timezonefinder](https://github.com/jannikmi/timezonefinder), offline.
+- Map tiles: [Esri](https://www.esri.com) World Dark Gray Canvas (Esri, HERE, Garmin, © OpenStreetMap contributors), no key needed.
 
 ## Run locally
 

@@ -10,14 +10,7 @@ import { STOP_LABEL, timeRange } from '../../lib/format'
 import { decodePolyline } from '../../lib/polyline'
 import type { StopSelection } from '../../state/selection'
 import { color, radius, stopColor } from '../../theme/tokens'
-import {
-  type Basemap,
-  createTileFallback,
-  FALLBACK,
-  FALLBACK_AFTER_MS,
-  fetchTileImage,
-  PRIMARY,
-} from './basemaps'
+import { BASEMAP } from './basemaps'
 import { iconFor } from './markers'
 import { groupOf, groupStops, type StopGroup } from './stopGroups'
 
@@ -56,7 +49,7 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
     map.current = instance
     L.control.zoom({ position: 'bottomright' }).addTo(instance)
     instance.attributionControl.setPrefix(false)
-    const stopWatchingTiles = addBasemap(instance)
+    addBasemap(instance)
 
     const line = decodePolyline(plan.route.polyline)
     L.polyline(line, { color: color.turquoise, weight: 12, opacity: 0.18, className: 'route-glow', interactive: false }).addTo(instance)
@@ -118,7 +111,6 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
     })
     observer.observe(element.current)
     return () => {
-      stopWatchingTiles()
       observer.disconnect()
       instance.remove()
       map.current = null
@@ -173,76 +165,11 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
   )
 }
 
-// In-flight tile requests, so a tile that leaves the view stops downloading.
-const tileRequests = new WeakMap<HTMLElement, AbortController>()
-const abortTile = (event: L.TileEvent) => tileRequests.get(event.tile)?.abort()
-
-/**
- * A tile layer that loads each tile with fetch(), so an HTTP error is a tile error
- * even when the server sends an image with it (Stadia's 401 tile does).
- */
-const StatusCheckedTileLayer = L.TileLayer.extend({
-  onAdd(this: L.TileLayer, map: L.Map) {
-    this.on('tileunload', abortTile)
-    return L.TileLayer.prototype.onAdd.call(this, map)
-  },
-  createTile(this: L.TileLayer, coords: L.Coords, done: L.DoneCallback): HTMLElement {
-    const tile = document.createElement('img')
-    tile.alt = ''
-    tile.setAttribute('role', 'presentation')
-    const request = new AbortController()
-    tileRequests.set(tile, request)
-    fetchTileImage(this.getTileUrl(coords), fetch, request.signal)
-      .then((blob) => {
-        const url = URL.createObjectURL(blob)
-        tile.onload = () => {
-          URL.revokeObjectURL(url)
-          done(undefined, tile)
-        }
-        tile.onerror = () => {
-          URL.revokeObjectURL(url)
-          done(new Error('tile image could not be decoded'), tile)
-        }
-        tile.src = url
-      })
-      .catch((error: Error) => {
-        // A tile we cancelled is not a failure of the tile server.
-        if (!request.signal.aborted) done(error, tile)
-      })
-    return tile
-  },
-}) as unknown as new (url: string, options?: L.TileLayerOptions) => L.TileLayer
-
-function tileLayers(basemap: Basemap, checkStatus = false): L.TileLayer[] {
-  return basemap.layers.map((layer) => {
-    const options: L.TileLayerOptions = {
-      // Leaflet shows the credits of the layers on the map, so they always match.
-      attribution: basemap.attribution,
-      className: layer.className,
-      maxZoom: layer.maxZoom,
-    }
-    return checkStatus ? new StatusCheckedTileLayer(layer.url, options) : L.tileLayer(layer.url, options)
-  })
-}
-
-/**
- * Stadia first. On repeated tile errors, or no tile at all within the timeout,
- * swap to Esri without a word, so the map is never blank. Returns a cleanup.
- */
-function addBasemap(map: L.Map): () => void {
-  const primary = tileLayers(PRIMARY, true)
-  const fallback = createTileFallback()
-  const useFallback = () => {
-    primary.forEach((layer) => layer.remove())
-    tileLayers(FALLBACK).forEach((layer) => layer.addTo(map))
+/** The basemap's layers on the map. Leaflet shows their credits, so they always match. */
+function addBasemap(map: L.Map) {
+  for (const layer of BASEMAP.layers) {
+    L.tileLayer(layer.url, { attribution: BASEMAP.attribution, className: layer.className, maxZoom: layer.maxZoom }).addTo(map)
   }
-  for (const layer of primary) {
-    layer.on('tileload', () => fallback.loaded())
-    layer.on('tileerror', () => fallback.errored() && useFallback())
-    layer.addTo(map)
-  }
-  const timer = window.setTimeout(() => fallback.timedOut() && useFallback(), FALLBACK_AFTER_MS)
-  return () => window.clearTimeout(timer)
 }
 
 function markerTitle(group: StopGroup, stops: Stop[]): string {

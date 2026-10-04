@@ -1,13 +1,10 @@
 /* The route map, styled to sit in the dark UI. */
 
-/* Tint CARTO's near-black tiles toward the slate blue of the product's map. */
 .leaflet-container {
   background: #1a2830;
   font-family: 'DM Sans Variable', system-ui, sans-serif;
 }
-/* Tint the tiles toward the teal slate of the product's map (screenshots 02-04).
-   Both basemaps get the same tone, so a fallback looks the same. */
-.tiles-stadia,
+/* Tint the tiles toward the teal slate of the product's map (screenshots 02-04). */
 .tiles-esri-base {
   filter: grayscale(1) sepia(0.55) hue-rotate(155deg) saturate(1.9) brightness(1.2);
 }
