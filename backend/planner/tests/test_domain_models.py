@@ -87,6 +87,11 @@ class TestLeg:
     def test_zero_mile_leg_is_valid(self):
         assert Leg(distance_miles=0, drive_min=0).drive_min == 0
 
+    def test_rejects_driving_time_without_distance(self):
+        # The engine divides miles by minutes; 0 miles in 30 minutes made that 0 mph.
+        with pytest.raises(ValueError, match="without distance"):
+            Leg(distance_miles=0, drive_min=30)
+
 
 class TestTripInput:
     def test_rejects_negative_cycle_hours(self):

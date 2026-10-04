@@ -9,12 +9,11 @@ import math
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
-from .models import Activity, DutyStatus, Event, StopReason
+from .clocks import DutyClocks
+from .models import ON_DUTY_STATUSES, Activity, DutyStatus, Event, StopReason
 from .policy import DEFAULT_POLICY, HOSPolicy
 
 DAY_MIN = 24 * 60
-ON_DUTY_STATUSES = frozenset({DutyStatus.DRIVING, DutyStatus.ON_DUTY})
-OFF_STATUSES = frozenset({DutyStatus.OFF_DUTY, DutyStatus.SLEEPER_BERTH})
 
 ACTIVITY_LABELS = {
     None: "Off duty",
@@ -67,6 +66,7 @@ class Recap:
     on_duty_today_min: int  # lines 3 and 4
     cycle_used_min: int  # A: hours on duty in the cycle, through today
     available_tomorrow_min: int  # B: 70 hours minus A, never below zero
+    approximate: bool = True  # always, for now: no day-by-day history is entered (D12)
 
 
 @dataclass(frozen=True, slots=True)
@@ -291,20 +291,11 @@ def _cycle_used_at_end_of_each_day(
 ) -> list[int]:
     """Recap line A for each day (D12): the hours entered plus on-duty time since,
     back to zero once 34 consecutive hours off complete a restart (guide p. 11)."""
-    cycle = cycle_used_min
-    off_streak = 0
+    clocks = DutyClocks(cycle_used_min=cycle_used_min)
     by_day = []
     for day in range(day_count):
         for p in _clip(pieces, day * DAY_MIN, (day + 1) * DAY_MIN):
-            if not p.on_trip:
-                continue  # padding is outside the plan; the hours entered cover it
-            minutes = p.end - p.start
-            if p.status in OFF_STATUSES:
-                off_streak += minutes
-                if off_streak >= policy.restart_min:
-                    cycle = 0
-            else:
-                off_streak = 0
-                cycle += minutes
-        by_day.append(cycle)
+            if p.on_trip:  # padding is outside the plan; the hours entered cover it
+                clocks.advance(p.status, p.start, p.end - p.start, policy)
+        by_day.append(clocks.cycle_used_min)
     return by_day

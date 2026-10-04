@@ -8,12 +8,19 @@ Limits come from HOSPolicy; nothing here hard-codes a number.
 
 import itertools
 import math
-from dataclasses import dataclass
 
-from .models import Activity, DutyStatus, Event, Leg, StopReason, TripInput
+from .clocks import DutyClocks
+from .models import (
+    OFF_DUTY_STATUSES,
+    ON_DUTY_STATUSES,
+    Activity,
+    Event,
+    Leg,
+    StopReason,
+    TripInput,
+)
 from .policy import DEFAULT_POLICY, HOSPolicy
 
-OFF_STATUSES = frozenset({DutyStatus.OFF_DUTY, DutyStatus.SLEEPER_BERTH})
 EPSILON = 1e-9  # float slack when converting miles to whole minutes
 # A legitimate plan needs at most 3 stops in a row before driving again (say rest,
 # pre-trip, fuel). More than this means no stop is freeing the clocks: fail loudly
@@ -80,35 +87,13 @@ def _short_drive_before_stop(events: list[Event], min_drive_min: int) -> bool:
 
 def _minutes_past_cycle(events: list[Event], cycle_used_min: int, policy: HOSPolicy) -> int:
     """On-duty minutes worked beyond the 70 hours: allowed (D14), but best avoided."""
-    cycle, off_streak, past = cycle_used_min, 0, 0
+    clocks, past = DutyClocks(cycle_used_min=cycle_used_min), 0
     for event in events:
-        if event.status in OFF_STATUSES:
-            off_streak += event.duration_min
-            if off_streak >= policy.restart_min:
-                cycle = 0
-            continue
-        off_streak = 0
-        before, cycle = cycle, cycle + event.duration_min
-        past += max(0, cycle - max(before, policy.cycle_limit_min))
+        before = clocks.cycle_used_min
+        clocks.advance(event.status, event.start_min, event.duration_min, policy)
+        if event.status in ON_DUTY_STATUSES:
+            past += max(0, clocks.cycle_used_min - max(before, policy.cycle_limit_min))
     return past
-
-
-@dataclass
-class _Clocks:
-    """What the rules need to know about the driver's recent past.
-
-    The driver starts rested (D10) with a full tank (D7), so every clock starts
-    at zero except the cycle, which starts at the hours already used (D3).
-    """
-
-    driving_min: int = 0  # driving since the last 10-hour rest (11-hour limit)
-    window_start_min: int | None = None  # first on-duty minute since that rest (14-hour window)
-    off_streak_min: int = 0  # consecutive off-duty or sleeper minutes up to now
-    driving_since_break_min: int = 0  # driving since the last qualifying break (8-hour rule)
-    not_driving_streak_min: int = 0  # consecutive non-driving minutes of any status up to now
-    cycle_used_min: int = 0  # on duty in the current 70-hour cycle, seeded from the input (D3)
-    pre_trip_done: bool = False  # inspected in the current duty period (D4)
-    miles_since_fuel: float = 0.0  # driven since the last fuel stop (D7)
 
 
 class _Scheduler:
@@ -117,7 +102,9 @@ class _Scheduler:
         self.policy = policy
         # The shortest drive worth starting before a required stop (D20); 1 = any.
         self.min_drive_min = max(1, min_drive_min)
-        self.clocks = _Clocks(cycle_used_min=trip.cycle_used_min)
+        self.clocks = DutyClocks(cycle_used_min=trip.cycle_used_min)  # D3; rested (D10)
+        self.pre_trip_done = False  # inspected in the current duty period (D4)
+        self.miles_since_fuel = 0.0  # driven since the last fuel stop; full at the start (D7)
         self.now = 0
         self.mile = 0.0
         self.events: list[Event] = []
@@ -142,7 +129,7 @@ class _Scheduler:
         Skipped when no driving would fit after the inspection and the pickup; the
         pre-trip then comes after the rest or restart, before the first drive.
         """
-        if not self.policy.pre_trip_min or self.clocks.pre_trip_done:
+        if not self.policy.pre_trip_min or self.pre_trip_done:
             return
         if self.clocks.window_start_min is not None or not self.trip.to_dropoff.drive_min:
             return  # not the start of a duty period, or nothing to drive afterwards
@@ -164,7 +151,7 @@ class _Scheduler:
             # Less driving than this before a limit stops it: take the stop first (D20).
             too_short_min = min(self.min_drive_min, leg.drive_min - driven_min)
 
-            if self.policy.pre_trip_min and not self.clocks.pre_trip_done:
+            if self.policy.pre_trip_min and not self.pre_trip_done:
                 # D4: inspect before the first drive of each duty period, unless a limit
                 # would leave no driving time after it; that stop then comes first.
                 after_min, limit = self._driving_allowance(self.policy.pre_trip_min, on_duty=True)
@@ -265,7 +252,7 @@ class _Scheduler:
         stops_left = self._fuel_stops_left()
         if stops_left == 0:
             return False
-        tank_left_miles = self.policy.fuel_interval_miles - self.clocks.miles_since_fuel
+        tank_left_miles = self.policy.fuel_interval_miles - self.miles_since_fuel
         miles_left = self.trip.total_miles - self.mile
         next_shift_miles = min(miles_left, self.policy.max_driving_min * self.miles_per_min)
         if tank_left_miles >= next_shift_miles:
@@ -288,7 +275,7 @@ class _Scheduler:
 
         Rounded down, so the stop always comes at or before the interval (D7).
         """
-        tank_left_miles = self.policy.fuel_interval_miles - self.clocks.miles_since_fuel
+        tank_left_miles = self.policy.fuel_interval_miles - self.miles_since_fuel
         if math.isinf(tank_left_miles):
             return 10**9
         return math.floor(tank_left_miles / self.miles_per_min + EPSILON)
@@ -299,7 +286,7 @@ class _Scheduler:
         if math.isinf(interval):
             return 0
         if miles_since_fuel is None:
-            miles_since_fuel = self.clocks.miles_since_fuel
+            miles_since_fuel = self.miles_since_fuel
         miles_left = self.trip.total_miles - self.mile
         return max(0, math.ceil((miles_since_fuel + miles_left) / interval - EPSILON) - 1)
 
@@ -364,49 +351,17 @@ class _Scheduler:
         self.events.append(
             Event(activity, status, start_min, self.now + minutes, start_mile, end_mile, reason)
         )
-        self._update_clocks(status, minutes)
+        self.clocks.advance(status, self.now, minutes, self.policy)
+        if status in OFF_DUTY_STATUSES and self.clocks.rested(self.policy):
+            self.pre_trip_done = False  # the next duty period needs its own pre-trip (D4)
         if activity is Activity.PRE_TRIP:
-            self.clocks.pre_trip_done = True
+            self.pre_trip_done = True
         elif activity is Activity.FUEL:
-            self.clocks.miles_since_fuel = 0.0
+            self.miles_since_fuel = 0.0
         elif activity is Activity.DRIVING:
-            self.clocks.miles_since_fuel += end_mile - self.mile
+            self.miles_since_fuel += end_mile - self.mile
         self.now += minutes
         self.mile = end_mile
-
-    def _update_clocks(self, status: DutyStatus, minutes: int) -> None:
-        clocks = self.clocks
-
-        # 8-hour rule: driving counts cumulatively until 30 consecutive minutes of
-        # any non-driving status, on duty included (guide p. 10, D9).
-        if status is DutyStatus.DRIVING:
-            clocks.driving_since_break_min += minutes
-            clocks.not_driving_streak_min = 0
-        else:
-            clocks.not_driving_streak_min += minutes
-            if clocks.not_driving_streak_min >= self.policy.break_min:
-                clocks.driving_since_break_min = 0
-
-        if status in OFF_STATUSES:
-            clocks.off_streak_min += minutes
-            if clocks.off_streak_min >= self.policy.daily_rest_min:
-                # A full rest resets the 11-hour limit and the 14-hour window (guide p. 6-7),
-                # and the next duty period needs its own pre-trip (D4).
-                clocks.driving_min = 0
-                clocks.window_start_min = None
-                clocks.pre_trip_done = False
-            if clocks.off_streak_min >= self.policy.restart_min:
-                clocks.cycle_used_min = 0  # the 34-hour restart (guide p. 11)
-            return
-
-        # All on-duty time counts toward the cycle, not just driving (guide p. 10).
-        clocks.cycle_used_min += minutes
-        clocks.off_streak_min = 0
-        if clocks.window_start_min is None:
-            # The window starts with any work, not with the first drive (guide p. 6).
-            clocks.window_start_min = self.now
-        if status is DutyStatus.DRIVING:
-            clocks.driving_min += minutes
 
 
 class _OneRestartCovers(_Scheduler):

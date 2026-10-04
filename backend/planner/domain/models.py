@@ -18,6 +18,10 @@ class DutyStatus(StrEnum):
     ON_DUTY = "on_duty"  # on duty, not driving
 
 
+OFF_DUTY_STATUSES = frozenset({DutyStatus.OFF_DUTY, DutyStatus.SLEEPER_BERTH})
+ON_DUTY_STATUSES = frozenset({DutyStatus.DRIVING, DutyStatus.ON_DUTY})
+
+
 class Activity(StrEnum):
     """What the driver is doing. Drives the remarks, the stop list and the map."""
 
@@ -53,6 +57,8 @@ class Leg:
             raise ValueError("leg distance and driving time must not be negative")
         if self.distance_miles > 0 and self.drive_min == 0:
             raise ValueError("a leg with distance needs driving time")
+        if self.distance_miles == 0 and self.drive_min > 0:
+            raise ValueError("a leg without distance has no driving time")
 
 
 @dataclass(frozen=True, slots=True)

@@ -19,6 +19,7 @@ from pathlib import Path
 import httpx
 import pytest
 
+from planner.api.presenters import plan_json
 from planner.providers.geocoding import FallbackGeocoder
 from planner.providers.http import make_client
 from planner.providers.nominatim import NominatimGeocoder
@@ -163,7 +164,7 @@ def test_golden_trip(trip):
         cycle_used_min=cycle_h * 60,
         start_time=START,
     )
-    result = snapshot_of(plan(request, providers_for(transport)))
+    result = snapshot_of(plan_json(plan(request, providers_for(transport))))
 
     if RECORD:
         FIXTURES.mkdir(parents=True, exist_ok=True)

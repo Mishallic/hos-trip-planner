@@ -50,8 +50,10 @@ minutes from the trip start; positions are miles along the route.
 
 The result is one timeline of events. Everything else is a view of it: the stops, the
 clocks at each stop, and the daily logs (`log_builder.py`), which split the timeline
-at midnight in the home terminal's time zone. The frontend draws; it contains no HOS
-logic.
+at midnight in the home terminal's time zone. How each minute of each duty status moves
+the driver's clocks is written once (`DutyClocks` in `clocks.py`) and used by the engine,
+the stop list and the recap; the tests check every plan against a separate statement of
+the rules (`tests/hos_helpers.py`). The frontend draws; it contains no HOS logic.
 
 Every limit and assumption is in one `HOSPolicy` object
 (`backend/planner/domain/policy.py`). Where the rules leave room, the planner's
@@ -112,7 +114,7 @@ backend/planner/
   domain/      HOSPolicy, models, hos_engine, log_builder, clocks, explain, geometry (pure)
   providers/   OSRM routing, Photon + Nominatim search, offline stop names and time zones, cache
   services/    trip_planning.py: the only place that wires providers, engine and logs
-  api/         serializers, views, JSON errors, throttling
+  api/         serializers (input), presenters (the JSON out), views, JSON errors, throttling
   tests/       one test class per rule, property tests, golden trips, API tests
 frontend/src/
   features/    trip-form, route-map, itinerary, trip-summary, eld-log, logs, directions, plan
@@ -124,7 +126,7 @@ frontend/src/
 
 | Endpoint | Returns |
 |---|---|
-| `GET /api/health` | `{"status": "ok", "python": "<version>"}` |
+| `GET /api/health` | `{"status": "ok"}` |
 | `POST /api/trips/plan` | The plan: summary, stops, timeline with clocks, route (encoded polyline and turn-by-turn steps), daily logs, log header |
 | `GET /api/places?q=` | Place suggestions in the US, Canada and Mexico |
 
