@@ -180,7 +180,7 @@ npm test
   Photon, both rate-limited. Results are cached, and the API throttles requests.
 - **Cache and throttle are per instance** and best effort: each serverless instance
   keeps its own, with no shared store.
-- **Very long trips** (6,000+ miles) take about 1.3 s on the server; about 1.0 s of that
+- **Very long trips** (6,000+ miles) take about 1.3 s on the server; about 1.0 s of that is
   computing, mostly reading the route's geometry.
 
 ## What is deliberately left out
