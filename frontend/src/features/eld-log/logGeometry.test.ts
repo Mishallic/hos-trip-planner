@@ -16,6 +16,7 @@ import {
   flagReach,
   minuteX,
   remarkLayout,
+  remarksHeight,
   SHEET,
   ROWS,
   statusY,
@@ -256,5 +257,18 @@ describe('remarkLayout', () => {
 
     expect(remarkLayout(log).flags[0].text).toHaveLength(60)
     expect(remarkLayout(log).flags[0].text.endsWith('…')).toBe(true)
+  })
+})
+
+describe('remarksHeight', () => {
+  it('ends a little under the longest flag', () => {
+    const { flags } = remarkLayout(doe)
+    const longest = Math.max(...flags.map((f) => flagReach(f.text)))
+
+    expect(remarksHeight(flags)).toBe(36 + longest + 14)
+  })
+
+  it('keeps room for "No stops today" when there are no flags', () => {
+    expect(remarksHeight([])).toBe(60)
   })
 })

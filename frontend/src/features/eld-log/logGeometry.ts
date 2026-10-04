@@ -168,6 +168,12 @@ export const REMARKS = {
   maxFlagChars: 60,
   /** Average width of a flag character at 11.5 px, for the reach estimate. */
   charWidth: 6.5,
+  /** From the band's top to where flag text starts: ruler, bracket, leader. */
+  flagTop: 36,
+  /** Space left under the longest flag. */
+  margin: 14,
+  /** The band's height with no flags: room for "No stops today". */
+  minHeight: 60,
 }
 
 export interface Bracket {
@@ -224,7 +230,13 @@ export function remarkLayout(
   return { brackets, flags }
 }
 
-/** How far right a flag's text reaches at 45 degrees, in SVG units. */
+/** The remarks band's height: down to the end of its longest flag, plus a margin. */
+export function remarksHeight(flags: Flag[]): number {
+  const longest = Math.max(0, ...flags.map((flag) => flagReach(flag.text)))
+  return Math.max(REMARKS.minHeight, REMARKS.flagTop + longest + REMARKS.margin)
+}
+
+/** How far right (and, at 45 degrees, down) a flag's text reaches, in SVG units. */
 export function flagReach(text: string): number {
   return text.length * REMARKS.charWidth * Math.SQRT1_2
 }

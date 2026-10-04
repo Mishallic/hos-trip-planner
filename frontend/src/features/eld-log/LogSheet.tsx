@@ -12,6 +12,8 @@ import {
   gridTicks,
   hourLabels,
   minuteX,
+  remarkLayout,
+  remarksHeight,
   ROWS,
   rowTop,
   type Run,
@@ -19,14 +21,15 @@ import {
   SHEET,
   statusY,
 } from './logGeometry'
-import { GRID_BLOCK_HEIGHT, HEADER_HEIGHT, Recap, RECAP_HEIGHT, RemarksBand, REMARKS_HEIGHT, SheetHeader } from './SheetParts'
+import { GRID_BLOCK_HEIGHT, HEADER_HEIGHT, Recap, RECAP_HEIGHT, RemarksBand, SheetHeader } from './SheetParts'
 
 const INK = color.paperInk
 const ROW_H = SHEET.rowHeight
 /** The band reaches a little past the grid, so the midnight labels centre on its edges. */
 const BAND_LEFT = GRID.left - 24
 const TOTALS_X = SHEET.width - 10 // right edge of the totals text
-const HEIGHT = HEADER_HEIGHT + GRID_BLOCK_HEIGHT + REMARKS_HEIGHT + RECAP_HEIGHT
+/** Where the remarks band starts, just under the totals. */
+const REMARKS_TOP = GRID_BLOCK_HEIGHT - 10
 
 interface LogSheetProps {
   log: DailyLog
@@ -49,12 +52,15 @@ interface LogSheetProps {
  */
 export function LogSheet({ log, selected, header, day, days, carried, sinceRestart }: LogSheetProps) {
   const runs = dutyRuns(log.segments)
+  // The remarks band is as tall as its longest flag, so the recap follows close under it.
+  const recapTop = HEADER_HEIGHT + REMARKS_TOP + remarksHeight(remarkLayout(log, carried).flags)
+  const height = recapTop + RECAP_HEIGHT
   const totals = ROWS.map((row) => `${row.title} ${log.totals_hm[row.status]}`).join(', ')
 
   return (
     <>
       <svg
-        viewBox={`0 0 ${SHEET.width} ${HEIGHT}`}
+        viewBox={`0 0 ${SHEET.width} ${height}`}
         role="img"
         // A label, not an SVG <title>: browsers would show a title as a second tooltip.
         aria-label={`Duty status for ${log.date}: ${totals}.`}
@@ -84,7 +90,7 @@ export function LogSheet({ log, selected, header, day, days, carried, sinceResta
         ))}
 
         <Totals log={log} />
-        <RemarksBand log={log} top={GRID_BLOCK_HEIGHT - 10} carried={carried} />
+        <RemarksBand log={log} top={REMARKS_TOP} carried={carried} />
 
         {/* On top of everything: one invisible target per stretch for the tooltip. */}
         {runs.map((run) => (
@@ -108,7 +114,7 @@ export function LogSheet({ log, selected, header, day, days, carried, sinceResta
         ))}
         </g>
 
-        <Recap log={log} header={header} top={HEADER_HEIGHT + GRID_BLOCK_HEIGHT + REMARKS_HEIGHT} sinceRestart={sinceRestart} />
+        <Recap log={log} header={header} top={recapTop} sinceRestart={sinceRestart} />
       </svg>
 
       {/* The same sheet for screen readers: the day, each stretch, the remarks, the recap. */}

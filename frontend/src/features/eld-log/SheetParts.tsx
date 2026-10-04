@@ -10,7 +10,6 @@ const INK = color.paperInk
 const MUTED = color.paperMuted
 
 export const HEADER_HEIGHT = 168
-export const REMARKS_HEIGHT = 272
 export const RECAP_HEIGHT = 122
 
 /**
@@ -104,7 +103,7 @@ export function SheetHeader({ log, header, day, days }: { log: DailyLog; header:
  */
 export function RemarksBand({ log, top, carried }: { log: DailyLog; top: number; carried?: Remark }) {
   const { brackets, flags } = remarkLayout(log, carried)
-  const ruler = top + 18
+  const ruler = top + 18 // flag text starts REMARKS.flagTop below the band's top
   const bracketDepth = 10
   return (
     <g>
