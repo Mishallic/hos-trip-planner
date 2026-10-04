@@ -17,6 +17,8 @@ dist/
 dist-ssr/
 *.local
 *.log
+test-results/
+playwright-report/
 
 # Environment and deploy
 .env

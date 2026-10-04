@@ -168,6 +168,13 @@ Frontend (113 tests), from `frontend`:
 npm test
 ```
 
+End to end (Playwright, Chromium, on a desktop and a phone screen), from `frontend`:
+
+```powershell
+npx playwright install chromium   # once
+npm run e2e
+```
+
 - **Rules:** one test class per rule and decision, each citing the guide page or D-number.
 - **Property tests (Hypothesis):** random trips never break a rule (an independent
   checker in `tests/hos_helpers.py`), planning is deterministic, and the restart rule
@@ -177,8 +184,11 @@ npm test
 - **Frontend:** the log sheet's geometry (the duty line is continuous, covers 0-1440,
   and each row is as long as its total, including the guide's John Doe day on p. 18),
   the time scale, the shared selection, map markers, directions, the URL state.
-- **CI** (GitHub Actions) runs ruff, pytest, lint, unit tests, the type check and the
-  build on every push.
+- **End to end:** a sample trip from the empty map, Enter in a place field, every day's
+  sheet adding to 24:00, printing every day, Back between views, a place not found,
+  and a zoomed sheet on a phone. The API is answered from recorded plans.
+- **CI** (GitHub Actions) runs ruff, pytest, lint, unit tests, the type check, the
+  build and the end-to-end tests on every push.
 
 ## Limits
 
