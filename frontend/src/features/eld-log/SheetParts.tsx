@@ -161,7 +161,7 @@ export function RemarksBand({ log, top, carried }: { log: DailyLog; top: number;
  * The end-of-day recap (the form's bottom strip): on-duty hours today circled, as
  * the video does, and the 70-hour / 8-day figures A and B. Approximate (D12).
  */
-export function Recap({ log, header, top, sinceRestart }: { log: DailyLog; header: LogHeader; top: number; sinceRestart: boolean }) {
+export function Recap({ log, header, top, sinceRestart, restartToday }: { log: DailyLog; header: LogHeader; top: number; sinceRestart: boolean; restartToday: boolean }) {
   const { recap } = log
   // After a 34-hour restart the count starts again from zero, so it is exact.
   const approximate = recap.approximate && !sinceRestart
@@ -205,7 +205,7 @@ export function Recap({ log, header, top, sinceRestart }: { log: DailyLog; heade
       {/* The paper form's three figures. Without the days before the trip one by one,
           the last 7 and the last 8 days both count from the cycle hours entered. */}
       {col(250, ['A. Total hours on duty,', 'last 7 days incl. today'], `${about}${hm(recap.cycle_used_min)}`, counted)}
-      {col(440, ['B. Total hours available', 'tomorrow (70 hr − A)'], `${about}${hm(recap.available_tomorrow_min)}`, 'after 34 hours off: 70:00 again')}
+      {col(440, ['B. Total hours available', 'tomorrow (70 hr − A)'], `${about}${hm(recap.available_tomorrow_min)}`, restartToday ? 'after 34 hours off: 70:00 again' : '')}
       {col(630, ['C. Total hours on duty,', 'last 8 days incl. today'], `${about}${hm(recap.cycle_used_min)}`, counted)}
       <text x={820} y={top + 38} fontSize={10} fill={MUTED}>
         Shipping documents

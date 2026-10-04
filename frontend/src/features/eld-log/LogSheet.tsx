@@ -114,7 +114,7 @@ export function LogSheet({ log, selected, header, day, days, carried, sinceResta
         ))}
         </g>
 
-        <Recap log={log} header={header} top={recapTop} sinceRestart={sinceRestart} />
+        <Recap log={log} header={header} top={recapTop} sinceRestart={sinceRestart} restartToday={restartOnSheet(log, carried)} />
       </svg>
 
       {/* The same sheet for screen readers: the day, each stretch, the remarks, the recap. */}
@@ -320,6 +320,13 @@ function placeOf(run: Run, log: DailyLog): string | null {
 
 function rowTitle(run: Run): string {
   return ROWS.find((row) => row.status === run.status)?.title ?? run.status
+}
+
+/** A 34-hour restart happens on this sheet: it starts here, or carries over into it. */
+function restartOnSheet(log: DailyLog, carried?: Remark): boolean {
+  const isRestart = (label?: string) => Boolean(label?.includes('34-hour restart'))
+  const carriedOver = isRestart(carried?.label) && log.segments[0]?.status === 'off_duty'
+  return carriedOver || log.remarks.some((remark) => isRestart(remark.label))
 }
 
 /** Minutes from midnight as a clock time; the end of the day reads 24:00. */
