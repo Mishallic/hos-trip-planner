@@ -1,5 +1,5 @@
 import { Box, Button, GlobalStyles, Stack, Tab, Tabs, Typography } from '@mui/material'
-import { Printer } from 'lucide-react'
+import { Printer, ZoomIn, ZoomOut } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { DailyLog, TripPlan } from '../../api/types'
@@ -10,7 +10,7 @@ import { minuteX, SHEET, stopOnSheet } from '../eld-log/logGeometry'
 
 const MOBILE = `@media (max-width: ${layout.mobile - 1}px)`
 const PRINT = '@media print'
-/** Narrower than this the labels get too small: the sheet scrolls sideways in its card instead. */
+/** Zoomed in, the sheet keeps at least this width and scrolls sideways in a narrower card. */
 const SHEET_MIN_WIDTH = 820
 
 /**
@@ -32,7 +32,11 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
   // App remounts this view for a new plan; the clamp only guards a shorter one.
   const day = Math.min(chosen, plan.logs.length - 1)
   const scrollers = useRef<(HTMLElement | null)[]>([])
-  const scrolls = useOverflows(scrollers, day)
+  // A card narrower than the sheet's readable width (phones, small tablets) shows the
+  // whole day fitted to its width; "Zoom in" switches to the wide sheet that scrolls.
+  const narrow = useNarrow(scrollers, day)
+  const [zoomed, setZoomed] = useState(false)
+  const scrolls = narrow && zoomed
 
   // On a sheet too wide for the screen, show the part of the day that holds the stop.
   useEffect(() => {
@@ -42,7 +46,7 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
     if (!span || !scroller || !sheet || scroller.scrollWidth <= scroller.clientWidth) return
     const x = sheet.offsetLeft + (minuteX(span.start) / SHEET.width) * sheet.clientWidth
     scroller.scrollLeft = Math.max(0, x - scroller.clientWidth / 4)
-  }, [stop, plan.logs, day])
+  }, [stop, plan.logs, day, zoomed])
 
   return (
     <Box
@@ -136,6 +140,19 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
               },
             }}
           >
+            {narrow && (
+              <Stack data-no-print direction="row" sx={{ justifyContent: 'flex-end', mt: -1, mb: 0.5 }}>
+                <Button
+                  size="small"
+                  onClick={() => setZoomed((z) => !z)}
+                  aria-pressed={zoomed}
+                  startIcon={zoomed ? <ZoomOut size={16} /> : <ZoomIn size={16} />}
+                  sx={{ color: color.paperInk, '&:hover': { background: 'rgba(20, 32, 43, 0.06)' } }}
+                >
+                  {zoomed ? 'Fit to width' : 'Zoom in'}
+                </Button>
+              </Stack>
+            )}
             <Box
               ref={(node: HTMLElement | null) => {
                 scrollers.current[index] = node
@@ -147,7 +164,7 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
             >
               <Box
                 sx={{
-                  minWidth: SHEET_MIN_WIDTH,
+                  minWidth: zoomed ? SHEET_MIN_WIDTH : 0,
                   // One sheet per landscape page: sized by the page's height, which binds first.
                   [PRINT]: { minWidth: 0, breakInside: 'avoid', '& svg': { width: 'auto !important', height: '186mm !important', maxWidth: '100%', mx: 'auto' } },
                 }}
@@ -175,17 +192,17 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
   )
 }
 
-/** Whether the shown sheet is wider than its card, kept up to date as the window resizes. */
-function useOverflows(scrollers: { current: (HTMLElement | null)[] }, day: number): boolean {
-  const [overflows, setOverflows] = useState(false)
+/** Whether the shown sheet's card is narrower than the sheet's readable width. */
+function useNarrow(scrollers: { current: (HTMLElement | null)[] }, day: number): boolean {
+  const [narrow, setNarrow] = useState(false)
   useEffect(() => {
     const scroller = scrollers.current[day]
     if (!scroller || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => setOverflows(scroller.scrollWidth > scroller.clientWidth + 1))
+    const observer = new ResizeObserver(() => setNarrow(scroller.clientWidth < SHEET_MIN_WIDTH))
     observer.observe(scroller)
     return () => observer.disconnect()
   }, [scrollers, day])
-  return overflows
+  return narrow
 }
 
 const dateOf = (log: DailyLog) => new Date(`${log.date}T12:00:00Z`)
