@@ -21,10 +21,21 @@ MAX_STOPS_WITHOUT_DRIVING = 10
 
 
 def plan_trip(trip: TripInput, policy: HOSPolicy = DEFAULT_POLICY) -> list[Event]:
-    """Return the trip's timeline: consecutive events from the start to the drop-off."""
+    """Return the trip's timeline: consecutive events from the start to the drop-off.
+
+    D19: when to take a 34-hour restart early depends on work still to come, which
+    the engine can only estimate. So it plans the trip with each restart rule and
+    keeps the plan with the fewest restarts, then the earliest drop-off.
+    """
     if trip.cycle_used_min > policy.cycle_limit_min:
         raise ValueError(f"cycle hours used cannot exceed {policy.cycle_limit_min // 60} hours")
-    return _Scheduler(trip, policy).run()
+    schedulers = (_Scheduler, _OneRestartCovers, _DriveCycleOut)
+    plans = [scheduler(trip, policy).run() for scheduler in schedulers]
+    return min(plans, key=lambda events: (_restarts(events), events[-1].end_min))
+
+
+def _restarts(events: list[Event]) -> int:
+    return sum(event.activity is Activity.RESTART for event in events)
 
 
 @dataclass
@@ -337,3 +348,20 @@ class _Scheduler:
             clocks.window_start_min = self.now
         if status is DutyStatus.DRIVING:
             clocks.driving_min += minutes
+
+
+class _OneRestartCovers(_Scheduler):
+    """D19 variant: restart early only when one restart covers the rest of the trip."""
+
+    def _restart_instead_of_rest(self) -> bool:
+        return (
+            super()._restart_instead_of_rest()
+            and self._cycle_needed_min() <= self.policy.cycle_limit_min
+        )
+
+
+class _DriveCycleOut(_Scheduler):
+    """D19 variant: never restart early; restart only when the cycle runs out."""
+
+    def _restart_instead_of_rest(self) -> bool:
+        return False

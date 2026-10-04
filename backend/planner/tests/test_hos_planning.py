@@ -8,10 +8,11 @@ from dataclasses import replace
 
 import pytest
 
-from planner.domain.models import Activity, DutyStatus, StopReason
+from planner.domain.hos_engine import plan_trip
+from planner.domain.models import Activity, DutyStatus, Leg, StopReason, TripInput
 from planner.domain.policy import DEFAULT_POLICY
 
-from .hos_helpers import H, first, plan, timeline
+from .hos_helpers import H, check_all, first, plan, timeline
 
 # The D7 and D15 tests switch off fuelling before a rest (D16), which would move
 # their fuel stops to the rest before them. TestFuelBeforeRest covers D16.
@@ -308,3 +309,13 @@ class TestRestartsOnLongTrips:
         )
         assert on_duty_before == DEFAULT_POLICY.cycle_limit_min
         assert restart.reason is StopReason.CYCLE_LIMIT
+
+    def test_one_restart_when_the_estimate_is_close(self):
+        # Found by the production smoke test: Miami -> Seattle -> Boston with 15 h used
+        # (routed legs below). The rule alone restarted early with 7:30 of cycle left
+        # and needed a second restart; driving the cycle out needs one, a day sooner.
+        trip = TripInput(Leg(3302.7, 3603), Leg(3039.3, 3316), cycle_used_min=15 * H)
+        events = plan_trip(trip)
+        check_all(events, trip, DEFAULT_POLICY)
+
+        assert count(events, "restart") == 1
