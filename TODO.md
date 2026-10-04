@@ -24,8 +24,8 @@
 - [x] footer credit: GeoNames (CC BY 4.0), OpenStreetMap contributors
 
 ## Ship
-- [ ] smoke test on prod (short, multi-day, restart, bad input)
-- [ ] CI
+- [x] smoke test on prod (short, multi-day, restart, bad input)
+- [x] CI
 - [ ] README
 
 ## Later
