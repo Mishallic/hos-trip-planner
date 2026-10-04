@@ -1,5 +1,10 @@
 """Polyline encoding and mapping mile positions to points on the route."""
 
+import gzip
+import json
+import math
+from pathlib import Path
+
 import pytest
 
 from planner.domain.geometry import (
@@ -9,6 +14,8 @@ from planner.domain.geometry import (
     haversine_miles,
     simplify,
 )
+
+GOLDEN = Path(__file__).parent / "fixtures" / "golden"
 
 # The worked example from Google's polyline format documentation.
 GOOGLE_EXAMPLE = "_p~iF~ps|U_ulLnnqC_mqNvxq`@"
@@ -98,3 +105,42 @@ class TestSimplify:
         zigzag = [(0.001 * (i % 2), i * 0.001) for i in range(1_200)]
 
         assert len(simplify(zigzag, 0.0001)) == 1_200
+
+    @pytest.mark.parametrize("fixture", sorted(GOLDEN.glob("*.json.gz")), ids=lambda f: f.stem)
+    def test_keeps_exactly_the_points_of_the_plain_algorithm_on_real_routes(self, fixture):
+        # The fast version must not change the drawn line: same points as the
+        # textbook Douglas-Peucker below, on every recorded route.
+        recorded = json.loads(gzip.decompress(fixture.read_bytes()))
+        routes = [r["body"] for key, r in recorded.items() if "/route/v1/" in key]
+        assert routes
+        for body in routes:
+            line = decode_polyline(body["routes"][0]["geometry"])
+            for tolerance in (0.0001, 0.001):
+                assert simplify(line, tolerance) == plain_douglas_peucker(line, tolerance)
+
+
+def plain_douglas_peucker(points, tolerance):
+    """The textbook algorithm, kept as the yardstick for the fast one."""
+    keep = [False] * len(points)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(points) - 1)]
+    while stack:
+        first, last = stack.pop()
+        farthest, max_distance = None, tolerance
+        for i in range(first + 1, last):
+            distance = _distance_to_segment(points[i], points[first], points[last])
+            if distance > max_distance:
+                farthest, max_distance = i, distance
+        if farthest is not None:
+            keep[farthest] = True
+            stack.extend(((first, farthest), (farthest, last)))
+    return [p for p, kept in zip(points, keep, strict=True) if kept]
+
+
+def _distance_to_segment(p, a, b):
+    (py, px), (ay, ax), (by, bx) = p, a, b
+    dx, dy = bx - ax, by - ay
+    if dx == dy == 0:
+        return math.hypot(px - ax, py - ay)
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+    return math.hypot(px - (ax + t * dx), py - (ay + t * dy))

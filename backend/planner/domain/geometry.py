@@ -111,31 +111,36 @@ def simplify(points: Sequence[LatLon], tolerance_deg: float) -> list[LatLon]:
     """Drop points that change the line by less than `tolerance_deg` (Douglas-Peucker).
 
     For drawing only: stop positions are worked out on the full geometry.
-    Iterative, so a long route cannot hit the recursion limit.
+    Iterative, so a long route cannot hit the recursion limit. A coast-to-coast
+    route has about 100,000 points, so the inner loop is written out in place, with
+    each segment's terms worked out once; the arithmetic is the plain algorithm's.
     """
     if len(points) < 3:
         return list(points)
+    hypot = math.hypot
+    ys = [p[0] for p in points]
+    xs = [p[1] for p in points]
     keep = [False] * len(points)
     keep[0] = keep[-1] = True
     stack = [(0, len(points) - 1)]
     while stack:
         first, last = stack.pop()
-        farthest, max_distance = None, tolerance_deg
+        ax, ay = xs[first], ys[first]
+        dx, dy = xs[last] - ax, ys[last] - ay
+        length2 = dx * dx + dy * dy
+        farthest, max_distance = -1, tolerance_deg
         for i in range(first + 1, last):
-            distance = _distance_to_segment(points[i], points[first], points[last])
+            px, py = xs[i], ys[i]
+            # Planar distance in degrees from the point to the segment.
+            if length2 == 0:
+                distance = hypot(px - ax, py - ay)
+            else:
+                t = ((px - ax) * dx + (py - ay) * dy) / length2
+                t = 0.0 if t < 0.0 else 1.0 if t > 1.0 else t
+                distance = hypot(px - (ax + t * dx), py - (ay + t * dy))
             if distance > max_distance:
                 farthest, max_distance = i, distance
-        if farthest is not None:
+        if farthest >= 0:
             keep[farthest] = True
             stack.extend(((first, farthest), (farthest, last)))
     return [p for p, kept in zip(points, keep, strict=True) if kept]
-
-
-def _distance_to_segment(p: LatLon, a: LatLon, b: LatLon) -> float:
-    """Planar distance in degrees from p to segment ab; fine at these small scales."""
-    (py, px), (ay, ax), (by, bx) = p, a, b
-    dx, dy = bx - ax, by - ay
-    if dx == dy == 0:
-        return math.hypot(px - ax, py - ay)
-    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
-    return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
