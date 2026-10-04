@@ -9,7 +9,7 @@ from collections.abc import Callable
 import httpx
 
 from . import http
-from .base import Place, UpstreamUnavailable
+from .base import Place, UpstreamUnavailable, place_kind
 from .regions import COUNTRIES, is_supported, region_code
 
 DEFAULT_URL = "https://photon.komoot.io"
@@ -30,6 +30,7 @@ class PhotonGeocoder:
         self.sleep = sleep
 
     def search(self, query: str, limit: int = 5) -> list[Place]:
+        # Twice the limit: some answers fall outside the US, Canada and Mexico.
         params = {"q": query, "limit": limit * 2, "lang": "en", "bbox": NORTH_AMERICA_BBOX}
         features = self._features("/api/", params)
         places = [_place(f) for f in features if is_supported(_props(f).get("countrycode"))]
@@ -52,7 +53,26 @@ def _props(feature: dict) -> dict:
 def _place(feature: dict) -> Place:
     props = _props(feature)
     lon, lat = feature["geometry"]["coordinates"]
-    return Place(label=_label(props), lat=lat, lon=lon, country_code=props.get("countrycode"))
+    return Place(
+        label=_label(props),
+        lat=lat,
+        lon=lon,
+        country_code=props.get("countrycode"),
+        kind=place_kind(props.get("osm_key"), props.get("osm_value")),
+        address=_joined(props.get(k) for k in ("housenumber", "street", "postcode", "city")),
+        region=_region(props),
+    )
+
+
+def _region(props: dict) -> str:
+    country = (props.get("countrycode") or "").upper()
+    state = props.get("state")
+    names = (props.get("county"), state, region_code(state, country), props.get("country"))
+    return _joined((*names, country, COUNTRIES.get(country)))
+
+
+def _joined(names) -> str:
+    return " ".join(name for name in names if name)
 
 
 def _label(props: dict) -> str:

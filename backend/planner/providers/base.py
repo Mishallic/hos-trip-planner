@@ -36,6 +36,19 @@ class Place:
     lat: float
     lon: float
     country_code: str | None = None
+    kind: str = "other"  # "town" (city, town, village), "area" (county, state, ...) or "other"
+    address: str = ""  # house number, street, postcode and city, beyond the label
+    region: str = ""  # county, state and country, with their codes
+
+
+TOWN_KINDS = frozenset({"city", "town", "village", "hamlet", "municipality"})
+
+
+def place_kind(category: str | None, value: str | None) -> str:
+    """ "town", "area" or "other", from an OpenStreetMap key and value (place=city, ...)."""
+    if category == "place" and value in TOWN_KINDS:
+        return "town"
+    return "area" if category in ("place", "boundary") else "other"
 
 
 @dataclass(frozen=True, slots=True)

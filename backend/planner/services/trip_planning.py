@@ -88,10 +88,13 @@ class Providers:
 @cache
 def default_providers() -> Providers:
     client = make_client()
+    towns = nearest_town()
     return Providers(
-        geocoder=FallbackGeocoder(PhotonGeocoder(client), NominatimGeocoder(client)),
+        geocoder=FallbackGeocoder(
+            PhotonGeocoder(client), NominatimGeocoder(client), spelled_like=towns.spelled_like
+        ),
         router=OsrmRouter(client),
-        towns=nearest_town(),
+        towns=towns,
         timezone_at=timezone_at,
         cache=DjangoCache(),
     )

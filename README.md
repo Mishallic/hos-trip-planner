@@ -194,7 +194,7 @@ npm test
 ## Data and services
 
 - Routing: [OSRM](https://project-osrm.org) public demo server.
-- Place search: [Photon](https://photon.komoot.io) by komoot, with [Nominatim](https://nominatim.org) as a fallback. Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.
+- Place search: [Photon](https://photon.komoot.io) by komoot, with [Nominatim](https://nominatim.org) as a fallback. Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Every answer must name what was typed ("Paris, France" finds nothing rather than a church in New Orleans), towns come before buildings and streets, each label is listed once, and a misspelt town ("Pheonix") is also searched as the town it is spelled like.
 - Stop names: place data from [GeoNames](https://www.geonames.org), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `backend/scripts/build_places.py` builds the bundled file (`places_us_ca_mx.tsv.gz`) from GeoNames `cities1000`, keeping places in the US, Canada and Mexico with at least 1,000 people.
 - Time zones: [timezonefinder](https://github.com/jannikmi/timezonefinder), offline.
 - Map tiles: [Esri](https://www.esri.com) World Dark Gray Canvas (Esri, HERE, Garmin, © OpenStreetMap contributors), no key needed.

@@ -81,3 +81,15 @@ def test_a_whole_plan_takes_a_few_milliseconds(towns):
 
 def test_loaded_once_per_process():
     assert nearest_town() is nearest_town()
+
+
+@pytest.mark.parametrize(
+    ("typed", "town"),
+    [("Pheonix", "Phoenix"), ("Albequerque", "Albuquerque"), ("Cincinatti", "Cincinnati")],
+)
+def test_a_misspelt_town_is_found_by_spelling(towns, typed, town):
+    assert towns.spelled_like(typed) == town
+
+
+def test_text_spelled_like_no_town_finds_none(towns):
+    assert towns.spelled_like("asdfgh") is None

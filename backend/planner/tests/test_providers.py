@@ -14,7 +14,7 @@ import pytest
 
 from planner.domain.geometry import RoutePath, decode_polyline, haversine_miles
 from planner.providers.base import NotFound, Place, Unroutable, UpstreamUnavailable
-from planner.providers.geocoding import FallbackGeocoder
+from planner.providers.geocoding import FallbackGeocoder, best_matches, query_variants
 from planner.providers.http import USER_AGENT, make_client
 from planner.providers.nominatim import NominatimGeocoder
 from planner.providers.osrm import OsrmRouter, instruction
@@ -291,6 +291,134 @@ class TestFallbackGeocoder:
         primary, fallback = FakeGeocoder([]), FakeGeocoder(self.DALLAS)
 
         assert FallbackGeocoder(primary, fallback).search("Dallas") == self.DALLAS
+
+    def test_fallback_when_nothing_the_primary_found_fits(self):
+        # Photon answers "asdfgh" with an office called ADF&G in Alaska.
+        primary = FakeGeocoder([Place("ADF&G, Cold Bay, AK", 55.2, -162.7, "US")])
+        fallback = FakeGeocoder([])
+
+        assert FallbackGeocoder(primary, fallback).search("asdfgh") == []
+        assert fallback.calls == 1
+
+    def test_a_typo_is_searched_as_the_town_spelled_like_it(self):
+        shop = Place("Pheonix, Round Rock, TX", 30.5, -97.7, "US")
+        phoenix = Place("Phoenix, AZ", 33.4, -112.1, "US", kind="town")
+        searched = []
+
+        class Photon:
+            def search(self, query, limit=5):
+                searched.append(query)
+                return [phoenix] if query == "Phoenix" else [shop]
+
+        towns = {"pheonix": "Phoenix"}
+        geocoder = FallbackGeocoder(Photon(), FakeGeocoder([]), lambda t: towns.get(t.lower()))
+
+        assert geocoder.search("Pheonix") == [phoenix, shop]
+        assert searched == ["Pheonix", "Phoenix"]
+
+
+def town(label: str, **fields) -> Place:
+    return Place(label, 0.0, 0.0, "US", kind="town", **fields)
+
+
+def area(label: str, **fields) -> Place:
+    return Place(label, 0.0, 0.0, "US", kind="area", **fields)
+
+
+def other(label: str, **fields) -> Place:
+    return Place(label, 0.0, 0.0, "US", kind="other", **fields)
+
+
+class TestBestMatches:
+    """Answers are checked against the words typed and ranked, as Photon gave them."""
+
+    def test_towns_come_first_and_each_label_once(self):
+        # Photon's answer to "Chicago": the city, then three stations named Chicago.
+        found = [
+            town("Chicago, IL"),
+            other("Chicago, IL", address="800 North State Street Chicago"),
+            other("Chicago, IL", address="300 West Chicago Avenue Chicago"),
+            town("Chicago Heights, IL"),
+        ]
+
+        labels = [p.label for p in best_matches("Chicago", found, 6)]
+
+        assert labels == ["Chicago, IL", "Chicago Heights, IL"]
+
+    def test_the_city_comes_before_buildings_named_after_it(self):
+        found = [
+            other("Washington University in St. Louis, Saint Louis, MO"),
+            town("Saint Louis, MO", region="Missouri MO"),
+            area("Saint Louis County, MO", region="Missouri MO"),
+        ]
+
+        best = best_matches("St. Louis, MO", found, 6)
+
+        assert best[0].label == "Saint Louis, MO"
+
+    def test_an_answer_must_name_what_was_typed(self):
+        # The only answer to "Paris, France" in North America: a cathedral in New
+        # Orleans, whose county (Orleans Parish) starts with "paris".
+        cathedral = other(
+            "Cathedral-Basilica of Saint Louis King of France, New Orleans, LA",
+            region="Orleans Parish Louisiana LA United States US USA",
+        )
+
+        assert best_matches("Paris, France", [cathedral], 6) == []
+        assert best_matches("asdfgh", [other("ADF&G, Cold Bay, AK")], 6) == []
+
+    def test_every_part_after_a_comma_must_fit(self):
+        dallas = town("Dallas, TX", region="Dallas County Texas TX United States US USA")
+
+        assert best_matches("Dallas, Texas", [dallas], 6) == [dallas]
+        assert best_matches("Dallas, TX, USA", [dallas], 6) == [dallas]
+        assert best_matches("Dallas, Oregon", [dallas], 6) == []
+
+    def test_typos_and_unfinished_words_still_fit(self):
+        chicago = town("Chicago, IL")
+        montreal = town("Montreal, QC, Canada")
+
+        assert best_matches("Chicgo", [chicago], 6) == [chicago]
+        assert best_matches("chi", [chicago], 6) == [chicago]
+        assert best_matches("Montréal", [montreal], 6) == [montreal]
+
+    def test_an_exact_name_comes_first_but_only_for_towns_and_areas(self):
+        railway = other("NYC, Shelbyville, IL")
+        new_york = town("New York, NY", region="New York NY")
+        found = [railway, other("New York City Ballet, New York, NY"), new_york]
+
+        assert best_matches("NYC", found, 6)[0] == new_york
+
+        state = area("Texas")
+        assert best_matches("Texas", [town("Texas City, TX"), state], 6)[0] == state
+
+    def test_street_addresses_keep_the_services_order(self):
+        found = [
+            other("White House, Washington, DC", address="1600 Pennsylvania Avenue Northwest"),
+            area("Pennsylvania", address="1600"),
+        ]
+
+        best = best_matches("1600 Pennsylvania Ave, Washington", found, 6)
+
+        assert [p.label for p in best] == ["White House, Washington, DC"]
+
+
+@pytest.mark.parametrize(
+    ("query", "variants"),
+    [
+        ("Dallas, TX", ["Dallas, TX"]),
+        ("Ft Worth, TX", ["Fort Worth, TX", "Ft Worth, TX"]),
+        ("St. Paul", ["Saint Paul", "St. Paul"]),
+        ("Mt Vernon", ["Mount Vernon", "Mt Vernon"]),
+        ("NYC", ["New York City", "NYC"]),
+        ("vegas, NV", ["Las Vegas, NV", "vegas, NV"]),
+        ("Dallas, TX, USA", ["Dallas, TX"]),
+        ("Toronto, Canada", ["Toronto"]),
+        ("Mexico", ["Mexico"]),
+    ],
+)
+def test_query_variants(query, variants):
+    assert query_variants(query) == variants
 
 
 class TestRegions:

@@ -6,9 +6,10 @@ grid index. A plan's lookups take milliseconds and never touch the network.
 Place data: GeoNames (https://www.geonames.org), CC BY 4.0.
 """
 
+import difflib
 import gzip
 import math
-from functools import cache
+from functools import cache, cached_property
 from pathlib import Path
 
 from planner.domain.geometry import haversine_miles
@@ -39,6 +40,16 @@ class NearestTown:
 
     def __len__(self) -> int:
         return len(self._points)
+
+    def spelled_like(self, text: str) -> str | None:
+        """The town name closest in spelling to `text`, if one is close: "Pheonix" ->
+        "Phoenix". For typos that the search service turns into businesses."""
+        found = difflib.get_close_matches(text.casefold(), self._names, n=1, cutoff=0.85)
+        return self._names[found[0]] if found else None
+
+    @cached_property
+    def _names(self) -> dict[str, str]:
+        return {label.split(", ")[0].casefold(): label.split(", ")[0] for label in self._labels}
 
     def city_state(self, lat: float, lon: float) -> str | None:
         found = self.nearest(lat, lon)
