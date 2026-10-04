@@ -203,6 +203,16 @@ class TestErrors:
         assert error["code"] == "invalid"
         assert set(error["fields"]) == {"cycle_used_hours", "start_time", "home_tz"}
 
+    @pytest.mark.parametrize("start_time", ["9999-12-31T23:00", "1999-12-31T23:00"])
+    def test_a_start_time_out_of_range_is_a_field_error_not_a_crash(self, client, use, start_time):
+        use(providers())
+
+        response = post_plan(client, plan_body(start_time=start_time))
+
+        assert response.status_code == 400
+        fields = response.json()["error"]["fields"]
+        assert fields["start_time"] == ["Use a start date between 2000 and 2100."]
+
     def test_a_place_needs_coordinates_or_a_query(self, client, use):
         use(providers())
 

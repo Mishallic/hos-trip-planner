@@ -63,9 +63,13 @@ class PlanRequestSerializer(serializers.Serializer):
 
     def validate_start_time(self, value: str) -> datetime:
         try:
-            return datetime.strptime(value, START_TIME_FORMAT)
+            start = datetime.strptime(value, START_TIME_FORMAT)
         except ValueError as exc:
             raise serializers.ValidationError("Use local time as YYYY-MM-DDTHH:MM.") from exc
+        # A trip runs for days past its start; near year 9999 the dates would overflow.
+        if not 2000 <= start.year <= 2100:
+            raise serializers.ValidationError("Use a start date between 2000 and 2100.")
+        return start
 
     def validate_home_tz(self, value: str) -> str:
         if value not in _time_zones():
