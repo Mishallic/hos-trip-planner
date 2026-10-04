@@ -1,5 +1,5 @@
 import type { Stop, Summary } from '../../api/types'
-import { clockTime, count, hm } from '../../lib/format'
+import { arrivalTime, count, hm } from '../../lib/format'
 import { parseInstant } from '../../lib/timeScale'
 
 export interface Verdict {
@@ -15,7 +15,7 @@ export interface Verdict {
  */
 export function verdictFor(summary: Summary, stops: Stop[]): Verdict {
   const days = count(summary.sheets, 'day')
-  const arrives = clockTime(summary.dropoff_arrival)
+  const arrives = arrivalTime(summary.start, summary.dropoff_arrival)
   if (summary.restart_needed) {
     const restarts = stops.filter((s) => s.kind === 'restart')
     const restartMin = restarts.reduce((sum, s) => sum + s.duration_min, 0)
@@ -24,7 +24,7 @@ export function verdictFor(summary: Summary, stops: Stop[]): Verdict {
       text: `Needs ${several ? `${restarts.length} × 34-hr restarts` : '34-hr restart'} (+${(restartMin / 1440).toFixed(1)} days)`,
       tone: 'warn',
       detail:
-        `The 70-hour cycle runs out${several ? ` ${restarts.length} times` : ''}, so the driver takes ` +
+        `The 70-hour cycle can't cover the whole trip, so the driver takes ${several ? `${restarts.length} restarts, ` : ''}` +
         `${Math.round(restartMin / 60)} hours off${several ? ' in all' : ''}. Delivers ${arrives}, ${days} of logs.`,
     }
   }

@@ -18,6 +18,20 @@ export function clockTime(iso: string, withDay = true): string {
   return `${weekday} ${time}`
 }
 
+/** "Fri 16 Oct 18:49": with the date, for trips long enough to repeat a weekday. */
+export function clockDate(iso: string): string {
+  const [date] = iso.split('T')
+  const day = new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+  const [weekday, time] = clockTime(iso).split(' ')
+  return `${weekday} ${day} ${time}`
+}
+
+/** The arrival as shown everywhere: with its date once the trip spans 6 days or more. */
+export function arrivalTime(startIso: string, arrivalIso: string): string {
+  const days = (Date.parse(arrivalIso) - Date.parse(startIso)) / 86_400_000
+  return days >= 6 ? clockDate(arrivalIso) : clockTime(arrivalIso)
+}
+
 /**
  * From start to end, naming the end's day only when it differs: "Wed 17:30 – 18:00",
  * but "Mon 19:30 – Wed 05:30", so a 34-hour restart never reads as overnight. The

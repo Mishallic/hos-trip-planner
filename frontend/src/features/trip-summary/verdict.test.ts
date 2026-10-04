@@ -27,7 +27,7 @@ describe('verdictFor', () => {
     const twice = verdictFor(plan.summary, [...plan.stops, { ...once, start: '2026-10-09T05:00-07:00' }])
 
     expect(twice.text).toBe('Needs 2 × 34-hr restarts (+2.8 days)')
-    expect(twice.detail).toMatch(/^The 70-hour cycle runs out 2 times, so the driver takes 68 hours off in all\./)
+    expect(twice.detail).toMatch(/^The 70-hour cycle can't cover the whole trip, so the driver takes 2 restarts, 68 hours off in all\./)
   })
 
   it('times the trip to the drop-off arrival, not to the end of unloading', () => {

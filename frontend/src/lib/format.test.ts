@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { clockTime, count, timeRange } from './format'
+import { arrivalTime, clockTime, count, timeRange } from './format'
 
 describe('clockTime', () => {
   it('keeps the trip offset instead of the viewer time zone', () => {
@@ -28,5 +28,12 @@ describe('count', () => {
     expect(count(1, 'break')).toBe('1 break')
     expect(count(0, 'break')).toBe('0 breaks')
     expect(count(2, 'log sheet')).toBe('2 log sheets')
+  })
+})
+
+describe('arrivalTime', () => {
+  it('names the date once the trip is long enough to repeat a weekday', () => {
+    expect(arrivalTime('2026-10-05T07:00-04:00', '2026-10-07T05:24-04:00')).toBe('Wed 05:24')
+    expect(arrivalTime('2026-10-05T07:00-04:00', '2026-10-16T18:49-04:00')).toBe('Fri 16 Oct 18:49')
   })
 })

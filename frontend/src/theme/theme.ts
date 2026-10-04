@@ -57,7 +57,8 @@ export const theme = createTheme({
         // Printing is for the log sheets: landscape pages, white paper, no app chrome.
         '@page': { size: 'landscape', margin: '10mm' },
         '@media print': {
-          '[data-no-print]': { display: 'none !important' },
+          // Tooltips are portalled to the body, outside anything marked.
+          '[data-no-print], .MuiTooltip-popper': { display: 'none !important' },
         },
       },
     },

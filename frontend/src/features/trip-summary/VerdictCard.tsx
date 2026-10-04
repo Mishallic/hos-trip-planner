@@ -3,7 +3,7 @@ import { CircleCheck, RotateCcw } from 'lucide-react'
 
 import type { TripPlan } from '../../api/types'
 import { Badge, IconChip } from '../../components/CardParts'
-import { clockTime, count, miles } from '../../lib/format'
+import { arrivalTime, count, miles } from '../../lib/format'
 import { color } from '../../theme/tokens'
 
 /** Arrival and the trip in numbers. */
@@ -19,7 +19,7 @@ export function VerdictCard({ plan }: { plan: TripPlan }) {
         </IconChip>
         <Box>
           <Typography variant="h6" component="h2" sx={{ lineHeight: 1.2 }}>
-            Arrives {clockTime(summary.dropoff_arrival)}
+            Arrives {arrivalTime(summary.start, summary.dropoff_arrival)}
           </Typography>
           <Typography variant="body2">
             {miles(summary.total_miles)} · {summary.driving} driving · {summary.elapsed} total

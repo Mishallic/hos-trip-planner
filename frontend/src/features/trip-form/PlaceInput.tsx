@@ -86,6 +86,8 @@ export function PlaceInput({ label, value, onChange, error, autoFocus }: PlaceIn
       renderInput={(params) => (
         <TextField
           {...params}
+          // The API takes at most 200 characters; never let a search fail on length.
+          slotProps={{ ...params.slotProps, htmlInput: { ...params.slotProps.htmlInput, maxLength: 200 } }}
           size="small"
           label={label}
           autoFocus={autoFocus}

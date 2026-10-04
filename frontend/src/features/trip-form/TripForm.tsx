@@ -10,10 +10,10 @@ import {
   Typography,
 } from '@mui/material'
 import { ChevronDown, Route } from 'lucide-react'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 
 import type { ApiError } from '../../api/client'
-import { HEADER_FIELDS, type HeaderField, type TripForm as Form, validateForm } from '../../state/urlState'
+import { HEADER_FIELDS, type HeaderField, requestFromForm, type TripForm as Form, validateForm } from '../../state/urlState'
 import { color, radius } from '../../theme/tokens'
 import { PlaceInput } from './PlaceInput'
 
@@ -87,9 +87,22 @@ function ExpandedTrip({
   error,
 }: Pick<TripFormProps, 'initial' | 'onSubmit' | 'planning' | 'error'>) {
   const [form, setForm] = useState<Form>(initial)
-  const [touched, setTouched] = useState(false)
+  // A shared link with all three places that still cannot be planned (a cycle of 71,
+  // say) shows its errors at once instead of silently doing nothing.
+  const [touched, setTouched] = useState(
+    () => Boolean(initial.current.label && initial.pickup.label && initial.dropoff.label) && requestFromForm(initial) === null,
+  )
   const hasExtras = Boolean(initial.homeTz || HEADER_FIELDS.some((f) => initial.header[f]))
-  const [showMore, setShowMore] = useState(hasExtras)
+  const headerError = HEADER_FIELDS.some((f) => serverErrors(error)[f]) || Boolean(serverErrors(error).home_tz)
+  const [showMore, setShowMore] = useState(hasExtras || headerError)
+  const formRef = useRef<HTMLFormElement>(null)
+  const focusFirstError = () =>
+    requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus())
+
+  // After a failed plan, take the keyboard to the field that needs fixing.
+  useEffect(() => {
+    if (error) focusFirstError()
+  }, [error])
 
   const local = touched ? validateForm(form) : {}
   const errors = { ...serverErrors(error), ...local }
@@ -99,10 +112,11 @@ function ExpandedTrip({
     event.preventDefault()
     setTouched(true)
     if (Object.keys(validateForm(form)).length === 0) onSubmit(form)
+    else focusFirstError()
   }
 
   return (
-    <Card component="form" onSubmit={submit} noValidate sx={{ p: 2.5 }}>
+    <Card component="form" ref={formRef} onSubmit={submit} noValidate sx={{ p: 2.5 }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 2 }}>
         <Box
           sx={{
@@ -196,6 +210,8 @@ function ExpandedTrip({
                   label={HEADER_LABELS[field]}
                   value={form.header[field]}
                   onChange={(e) => update({ header: { ...form.header, [field]: e.target.value } })}
+                  error={Boolean(errors[field])}
+                  helperText={errors[field]}
                   slotProps={{ htmlInput: { maxLength: field === 'home_terminal' ? 200 : 100 } }}
                 />
               ))}
