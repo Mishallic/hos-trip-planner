@@ -159,10 +159,7 @@ def plan(
     logs = build_daily_logs(events, start, offset_min, request.cycle_used_min, policy)
 
     path = RoutePath(
-        [
-            (leg.distance_miles, decode_polyline(leg.polyline))
-            for leg in (route.to_pickup, route.to_dropoff)
-        ]
+        [(leg.distance_miles, leg.points) for leg in (route.to_pickup, route.to_dropoff)]
     )
     names: dict[float, str | None] = {}
 

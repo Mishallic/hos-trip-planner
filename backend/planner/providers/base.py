@@ -53,7 +53,7 @@ class RouteStep:
 class RouteLeg:
     distance_miles: float
     duration_min: float  # router estimate; the planner caps the speed (D8)
-    polyline: str  # this leg's geometry, encoded (precision 5)
+    points: tuple[tuple[float, float], ...]  # this leg's geometry, (lat, lon), decoded once
     steps: tuple[RouteStep, ...]
 
 

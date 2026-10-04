@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 import httpx
 
-from planner.domain.geometry import decode_polyline, encode_polyline
+from planner.domain.geometry import decode_polyline
 
 from . import http
 from .base import Place, Route, RouteLeg, RouteStep, Unroutable, UpstreamUnavailable
@@ -66,7 +66,7 @@ def _leg(leg: dict, destination: str) -> RouteLeg:
     return RouteLeg(
         distance_miles=leg["distance"] / METERS_PER_MILE,
         duration_min=leg["duration"] / 60,
-        polyline=encode_polyline(points),
+        points=tuple(points),
         steps=tuple(_step(step, destination) for step in leg["steps"]),
     )
 

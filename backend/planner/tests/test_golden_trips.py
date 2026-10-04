@@ -10,6 +10,7 @@ against snapshots/<trip>.json.
 """
 
 import gzip
+import hashlib
 import json
 import os
 from datetime import datetime
@@ -107,9 +108,12 @@ def providers_for(transport: httpx.BaseTransport) -> Providers:
 
 
 def snapshot_of(response: dict) -> dict:
-    """The parts of a plan that matter, small enough to read in a diff."""
+    """The parts of a plan that matter, small enough to read in a diff, and a hash of
+    the whole response, so a refactor that changes nothing provably changes nothing."""
     summary = response["summary"]
+    whole = json.dumps(response, sort_keys=True, separators=(",", ":")).encode()
     return {
+        "response_sha256": hashlib.sha256(whole).hexdigest(),
         "summary": {
             key: summary[key]
             for key in (

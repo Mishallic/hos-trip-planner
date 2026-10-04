@@ -108,8 +108,8 @@ class TestOsrmRoute:
         route = osrm.route(JOLIET, CHICAGO, GARY)
 
         whole = decode_polyline(route.polyline)
-        leg1 = decode_polyline(route.to_pickup.polyline)
-        leg2 = decode_polyline(route.to_dropoff.polyline)
+        leg1 = list(route.to_pickup.points)
+        leg2 = list(route.to_dropoff.points)
         assert haversine_miles(whole[0], (JOLIET.lat, JOLIET.lon)) < 1
         assert haversine_miles(whole[-1], (GARY.lat, GARY.lon)) < 1
         assert haversine_miles(leg1[-1], leg2[0]) < 0.01
@@ -119,10 +119,7 @@ class TestOsrmRoute:
         osrm, _ = router(fixture("osrm_route_ok"))
         route = osrm.route(JOLIET, CHICAGO, GARY)
         path = RoutePath(
-            [
-                (leg.distance_miles, decode_polyline(leg.polyline))
-                for leg in (route.to_pickup, route.to_dropoff)
-            ]
+            [(leg.distance_miles, leg.points) for leg in (route.to_pickup, route.to_dropoff)]
         )
 
         pickup = path.locate(route.to_pickup.distance_miles)
