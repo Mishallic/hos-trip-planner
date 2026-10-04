@@ -11,7 +11,7 @@ const MUTED = color.paperMuted
 
 export const HEADER_HEIGHT = 168
 export const REMARKS_HEIGHT = 272
-export const RECAP_HEIGHT = 112
+export const RECAP_HEIGHT = 122
 
 /**
  * A value cut to what fits a blank of `width` units at `size`, so a long carrier name
@@ -166,20 +166,25 @@ export function Recap({ log, header, top, sinceRestart }: { log: DailyLog; heade
   const { recap } = log
   // After a 34-hour restart the count starts again from zero, so it is exact.
   const approximate = recap.approximate && !sinceRestart
-  const col = (x: number, title: string, value: string, note: string) => (
+  const about = approximate ? '≈ ' : ''
+  const counted = sinceRestart ? 'since the 34-hour restart' : 'cycle hours entered + this trip'
+  const col = (x: number, title: [string, string], value: string, note: string) => (
     <g>
-      <text x={x} y={top + 40} fontSize={10} fill={MUTED}>
-        {title}
+      <text x={x} y={top + 38} fontSize={10} fill={MUTED}>
+        <tspan x={x}>{title[0]}</tspan>
+        <tspan x={x} dy={12}>
+          {title[1]}
+        </tspan>
       </text>
-      <text x={x} y={top + 64} fontSize={19} fontWeight={800} fill={INK}>
+      <text x={x} y={top + 74} fontSize={19} fontWeight={800} fill={INK}>
         {value}
       </text>
-      <text x={x} y={top + 80} fontSize={9.5} fill={MUTED}>
+      <text x={x} y={top + 90} fontSize={9.5} fill={MUTED}>
         {note}
       </text>
     </g>
   )
-  const circleX = 60
+  const circleX = 46
   return (
     <g>
       <line x1={0} x2={SHEET.width} y1={top} y2={top} stroke={INK} strokeWidth={1.2} />
@@ -187,30 +192,31 @@ export function Recap({ log, header, top, sinceRestart }: { log: DailyLog; heade
         RECAP · 70 HOUR / 8 DAY
       </text>
 
-      <circle cx={circleX} cy={top + 58} r={22} fill="none" stroke={INK} strokeWidth={1.4} />
-      <text x={circleX} y={top + 63} textAnchor="middle" fontSize={14} fontWeight={800} fill={INK}>
+      <circle cx={circleX} cy={top + 64} r={22} fill="none" stroke={INK} strokeWidth={1.4} />
+      <text x={circleX} y={top + 69} textAnchor="middle" fontSize={14} fontWeight={800} fill={INK}>
         {log.on_duty_hours}
       </text>
-      <text x={circleX + 32} y={top + 52} fontSize={10} fill={MUTED}>
+      <text x={circleX + 32} y={top + 58} fontSize={10} fill={MUTED}>
         On duty hours today
       </text>
-      <text x={circleX + 32} y={top + 65} fontSize={10} fill={MUTED}>
+      <text x={circleX + 32} y={top + 71} fontSize={10} fill={MUTED}>
         (lines 3 + 4: {hm(recap.on_duty_today_min)})
       </text>
 
-      {/* The form's A (last 7 days) needs day-by-day history the trip does not have.
-          C is what the planner knows, and B from C errs on the safe side. */}
-      {col(300, 'C. Total hours on duty, last 8 days incl. today', `${approximate ? '≈ ' : ''}${hm(recap.cycle_used_min)}`, sinceRestart ? 'since the 34-hour restart' : 'cycle hours entered + this trip')}
-      {col(560, 'B. Total hours available tomorrow (70 − C)', `${approximate ? '≈ ' : ''}${hm(recap.available_tomorrow_min)}`, 'after 34 hours off: 70:00 again')}
-      <text x={800} y={top + 40} fontSize={10} fill={MUTED}>
+      {/* The paper form's three figures. Without the days before the trip one by one,
+          the last 7 and the last 8 days both count from the cycle hours entered. */}
+      {col(250, ['A. Total hours on duty,', 'last 7 days incl. today'], `${about}${hm(recap.cycle_used_min)}`, counted)}
+      {col(440, ['B. Total hours available', 'tomorrow (70 hr − A)'], `${about}${hm(recap.available_tomorrow_min)}`, 'after 34 hours off: 70:00 again')}
+      {col(630, ['C. Total hours on duty,', 'last 8 days incl. today'], `${about}${hm(recap.cycle_used_min)}`, counted)}
+      <text x={820} y={top + 38} fontSize={10} fill={MUTED}>
         Shipping documents
       </text>
-      <Fitted x={800} y={top + 64} width={200} value={header.load_id || '—'} size={19} weight={800} />
-      <Fitted x={800} y={top + 80} width={200} value={[header.shipper, header.commodity].filter(Boolean).join(' · ') || 'Shipper & commodity'} size={9.5} weight={400} color={MUTED} />
+      <Fitted x={820} y={top + 74} width={180} value={header.load_id || '—'} size={19} weight={800} />
+      <Fitted x={820} y={top + 90} width={180} value={[header.shipper, header.commodity].filter(Boolean).join(' · ') || 'Shipper & commodity'} size={9.5} weight={400} color={MUTED} />
 
       {approximate && (
-        <text x={0} y={top + 102} fontSize={9.5} fill={MUTED}>
-          ≈ Approximate: the days before the trip are known only as the cycle hours entered, so C is counted from them (decision D12).
+        <text x={0} y={top + 112} fontSize={9.5} fill={MUTED}>
+          ≈ Approximate: the days before the trip are known only as the cycle hours entered, so A and C both count from them and come out equal (decision D12).
         </text>
       )}
     </g>

@@ -134,9 +134,10 @@ export function LogSheet({ log, selected, header, day, days, carried, sinceResta
             ))}
         </ul>
         <p>
-          On duty today {hm(log.recap.on_duty_today_min)}. Hours on duty in the last 8 days{' '}
-          {sinceRestart ? '' : 'about '}
-          {hm(log.recap.cycle_used_min)}, available tomorrow {hm(log.recap.available_tomorrow_min)}.
+          Recap: on duty today {hm(log.recap.on_duty_today_min)}. A, on duty in the last 7 days, and C, in the
+          last 8 days: {sinceRestart ? '' : 'about '}
+          {hm(log.recap.cycle_used_min)}. B, available tomorrow: {sinceRestart ? '' : 'about '}
+          {hm(log.recap.available_tomorrow_min)}.
         </p>
       </Box>
     </>
