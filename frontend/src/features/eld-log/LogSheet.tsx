@@ -52,9 +52,7 @@ interface LogSheetProps {
  */
 export function LogSheet({ log, selected, header, day, days, carried, sinceRestart }: LogSheetProps) {
   const runs = dutyRuns(log.segments)
-  // The remarks band is as tall as its longest flag, so the recap follows close under it.
-  const recapTop = HEADER_HEIGHT + REMARKS_TOP + remarksHeight(remarkLayout(log, carried).flags)
-  const height = recapTop + RECAP_HEIGHT
+  const { recapTop, height } = sheetHeights(log, carried)
   const totals = ROWS.map((row) => `${row.title} ${log.totals_hm[row.status]}`).join(', ')
 
   return (
@@ -147,6 +145,34 @@ export function LogSheet({ log, selected, header, day, days, carried, sinceResta
         </p>
       </Box>
     </>
+  )
+}
+
+/** Where the recap starts and how tall the sheet is, in SVG units. */
+function sheetHeights(log: DailyLog, carried?: Remark): { recapTop: number; height: number } {
+  // The remarks band is as tall as its longest flag, so the recap follows close under it.
+  const recapTop = HEADER_HEIGHT + REMARKS_TOP + remarksHeight(remarkLayout(log, carried).flags)
+  return { recapTop, height: recapTop + RECAP_HEIGHT }
+}
+
+/** The labels' column of the sheet, the part left of the hour band. */
+export const LABELS_WIDTH = BAND_LEFT
+
+/**
+ * The row labels again, for a sheet zoomed wider than the screen: laid over the
+ * sheet's own and pinned to the left, they stay in view while the grid scrolls.
+ * Scaled like the sheet when sized to LABELS_WIDTH / SHEET.width of its width.
+ */
+export function FrozenRowLabels({ log, carried }: { log: DailyLog; carried?: Remark }) {
+  const { height } = sheetHeights(log, carried)
+  return (
+    <svg viewBox={`0 0 ${LABELS_WIDTH} ${height}`} aria-hidden style={{ display: 'block', width: '100%', height: 'auto' }}>
+      <g transform={`translate(0 ${HEADER_HEIGHT})`}>
+        <rect x={0} y={GRID.top} width={LABELS_WIDTH} height={GRID.bottom - GRID.top} fill={color.paper} />
+        <line x1={LABELS_WIDTH - 0.5} x2={LABELS_WIDTH - 0.5} y1={GRID.top} y2={GRID.bottom} stroke={color.paperMuted} strokeWidth={1} opacity={0.4} />
+        <RowLabels />
+      </g>
+    </svg>
   )
 }
 

@@ -13,6 +13,11 @@ describe('verdictFor', () => {
     expect(verdict(multiDay)).toMatchObject({ text: 'Delivers Wed 05:24 · 3 days', tone: 'ok' })
   })
 
+  it('names the home terminal zone with the delivery time when given', () => {
+    const plan = multiDay as unknown as TripPlan
+    expect(verdictFor(plan.summary, plan.stops, 'CDT').text).toBe('Delivers Wed 05:24 CDT · 3 days')
+  })
+
   it('uses the singular for a one-day trip', () => {
     expect(verdict(short).text).toMatch(/ · 1 day$/)
   })

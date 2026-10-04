@@ -1,7 +1,7 @@
 import { Box, Card, Typography } from '@mui/material'
 
 import type { TripPlan } from '../../api/types'
-import { clockTime, STOP_LABEL } from '../../lib/format'
+import { clockTime, STOP_LABEL, zoneOf } from '../../lib/format'
 import { color, stopTextColor } from '../../theme/tokens'
 import { ClockMeters } from './ClockMeters'
 
@@ -33,13 +33,13 @@ export function ClocksCard({ plan, selectedStop }: { plan: TripPlan; selectedSto
           {' '}
           · {where.place ?? `mile ${where.mile}`} ·{' '}
           <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
-            {clockTime(where.start)}
+            {clockTime(where.start)} {zoneOf(plan)}
           </Box>
         </Box>
       </Typography>
       <ClockMeters clocks={clocks} />
       {/* One line either way, so the card keeps its height when a stop is selected. */}
-      <Typography variant="caption" component="p" noWrap sx={{ mt: 1 }}>
+      <Typography data-no-print variant="caption" component="p" noWrap sx={{ mt: 1 }}>
         {stop ? 'Time left on each limit as this stop begins.' : 'Select a stop to see the clocks there.'}
       </Typography>
     </Card>

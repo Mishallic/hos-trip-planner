@@ -1,9 +1,9 @@
-import { Box, Card, Stack, Typography } from '@mui/material'
+import { Alert, Box, Card, Stack, Typography } from '@mui/material'
 import { CircleCheck, RotateCcw } from 'lucide-react'
 
 import type { TripPlan } from '../../api/types'
 import { Badge, IconChip } from '../../components/CardParts'
-import { arrivalTime, count, miles } from '../../lib/format'
+import { arrivalTime, count, miles, zoneOf } from '../../lib/format'
 import { color } from '../../theme/tokens'
 
 /** Arrival and the trip in numbers. */
@@ -19,7 +19,7 @@ export function VerdictCard({ plan }: { plan: TripPlan }) {
         </IconChip>
         <Box>
           <Typography variant="h6" component="h2" sx={{ lineHeight: 1.2 }}>
-            Arrives {arrivalTime(summary.start, summary.dropoff_arrival)}
+            Arrives {arrivalTime(summary.start, summary.dropoff_arrival)} {zoneOf(plan)}
           </Typography>
           <Typography variant="body2">
             {miles(summary.total_miles)} · {summary.driving} driving · {summary.elapsed} total
@@ -39,6 +39,11 @@ export function VerdictCard({ plan }: { plan: TripPlan }) {
           />
         )}
       </Stack>
+      {plan.warnings?.map((warning) => (
+        <Alert key={warning} severity="warning" variant="outlined" sx={{ mt: 2, py: 0, fontSize: 13 }}>
+          {warning}
+        </Alert>
+      ))}
     </Card>
   )
 }

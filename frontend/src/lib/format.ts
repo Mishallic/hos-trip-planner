@@ -1,4 +1,4 @@
-import type { StopKind } from '../api/types'
+import type { StopKind, TripPlan } from '../api/types'
 
 /** Minutes as h:mm, e.g. 660 -> "11:00". */
 export function hm(minutes: number): string {
@@ -39,6 +39,23 @@ export function arrivalTime(startIso: string, arrivalIso: string): string {
  */
 export function timeRange(start: string, end: string): string {
   return `${clockTime(start)} – ${clockTime(end, start.slice(0, 10) !== end.slice(0, 10))}`
+}
+
+/**
+ * The home terminal's zone as people write it, "CDT" or "MST", or "UTC-05:00" where
+ * there is no short name. Every time in a plan is in it, at the start's offset (D17).
+ */
+export function zoneOf(plan: Pick<TripPlan, 'summary' | 'log_header'>): string {
+  const { time_zone: timeZone, utc_offset: offset } = plan.log_header
+  try {
+    const name = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'short' })
+      .formatToParts(new Date(Date.parse(plan.summary.start)))
+      .find((part) => part.type === 'timeZoneName')?.value
+    if (name && !name.startsWith('GMT')) return name
+  } catch {
+    // An unknown zone name: fall back to the offset.
+  }
+  return `UTC${offset}`
 }
 
 /** "1 break", "2 breaks". */

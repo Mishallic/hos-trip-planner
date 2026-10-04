@@ -15,9 +15,9 @@ import { useTripPlan } from './state/useTripPlan'
 import { color } from './theme/tokens'
 
 function App() {
-  const [view, setView] = useState<View>('plan')
   const [editing, setEditing] = useState(false)
-  const { form, plan, error, isPlanning, submit } = useTripPlan()
+  // The view lives in the URL with the trip: Back returns to the view before.
+  const { form, view, changeView: setView, plan, error, isPlanning, submit } = useTripPlan()
   // One selected stop for the map, timeline, list and clocks. A new plan clears it.
   const selection = useStopSelection(plan)
   const planKey = plan ? `${plan.summary.start}|${plan.summary.dropoff_arrival}|${plan.logs.length}` : 'none'
@@ -57,7 +57,18 @@ function App() {
       badge={plan && <VerdictBadge plan={plan} />}
       busy={isPlanning}
     >
-      {view === 'plan' && <PlanView plan={plan} form={tripForm} planning={isPlanning} selection={selection} />}
+      {view === 'plan' && (
+        <PlanView
+          plan={plan}
+          form={tripForm}
+          planning={isPlanning}
+          selection={selection}
+          onSample={(sample) => {
+            submit(sample)
+            setEditing(false)
+          }}
+        />
+      )}
       {view !== 'plan' && (
         // A new plan (Back, Forward, a new trip) starts the view afresh, error or not.
         <ErrorBoundary key={`${view}|${planKey}`}>

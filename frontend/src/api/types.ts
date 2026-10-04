@@ -103,6 +103,8 @@ export interface DailyLog {
     available_tomorrow_min: number
     approximate: boolean
   }
+  /** Why a sheet that looks over a limit is not, e.g. 13 hours of driving across two shifts. */
+  notes?: string[]
 }
 
 export interface LogHeader {
@@ -120,6 +122,8 @@ export interface LogHeader {
 
 export interface TripPlan {
   summary: Summary
+  /** Things to know about the plan, e.g. a ferry crossing planned as driving. */
+  warnings?: string[]
   stops: Stop[]
   timeline: TimelineEvent[]
   route: { polyline: string; legs: RouteLeg[] }

@@ -31,8 +31,13 @@ function svg(icon: IconNode, size: number, stroke: string): string {
   return element.outerHTML
 }
 
+/** "+3": stops near this marker, hidden under it at this zoom. */
+function moreBadge(more: number): string {
+  return more > 0 ? `<span class="route-dot-count">+${more}</span>` : ''
+}
+
 /** A teardrop pin with an icon, for pickup (green) and drop-off (red), as in the driver app. */
-function pin(fill: string, icon: IconNode, selected: boolean): L.DivIcon {
+function pin(fill: string, icon: IconNode, selected: boolean, more: number): L.DivIcon {
   const size = selected ? 46 : 38
   return L.divIcon({
     className: `route-marker route-pin${selected ? ' is-selected' : ''}`,
@@ -45,7 +50,7 @@ function pin(fill: string, icon: IconNode, selected: boolean): L.DivIcon {
         <path d="M20 49 C9 35 2 27 2 18 a18 18 0 1 1 36 0 c0 9 -7 17 -18 31Z"
               fill="${fill}" stroke="${color.bgDeep}" stroke-width="2"/>
       </svg>
-      <span class="route-pin-icon">${svg(icon, size * 0.42, color.bgDeep)}</span>`,
+      <span class="route-pin-icon">${svg(icon, size * 0.42, color.bgDeep)}</span>${moreBadge(more)}`,
   })
 }
 
@@ -64,7 +69,7 @@ function dot(kind: StopKind, count: number, selected: boolean): L.DivIcon {
 }
 
 /** The truck: where the driver is now. */
-function truck(selected: boolean): L.DivIcon {
+function truck(selected: boolean, more: number): L.DivIcon {
   const size = selected ? 44 : 38
   return L.divIcon({
     className: `route-marker route-truck${selected ? ' is-selected' : ''}`,
@@ -72,19 +77,20 @@ function truck(selected: boolean): L.DivIcon {
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2],
     tooltipAnchor: [0, -size / 2],
-    html: `<span class="route-truck-body">${svg(Truck, size * 0.5, color.text)}</span>`,
+    html: `<span class="route-truck-body">${svg(Truck, size * 0.5, color.text)}</span>${moreBadge(more)}`,
   })
 }
 
-export function iconFor(group: StopGroup, selected: boolean): L.DivIcon {
+/** A group's marker; `more` counts the stops of nearby markers hidden under it. */
+export function iconFor(group: StopGroup, selected: boolean, more = 0): L.DivIcon {
   switch (group.kind) {
     case 'current':
-      return truck(selected)
+      return truck(selected, more)
     case 'pickup':
-      return pin(stopColor.pickup, STOP_ICONS.pickup, selected)
+      return pin(stopColor.pickup, STOP_ICONS.pickup, selected, more)
     case 'dropoff':
-      return pin(stopColor.dropoff, STOP_ICONS.dropoff, selected)
+      return pin(stopColor.dropoff, STOP_ICONS.dropoff, selected, more)
     default:
-      return dot(group.mainKind, group.stops.length, selected)
+      return dot(group.mainKind, group.stops.length + more, selected)
   }
 }

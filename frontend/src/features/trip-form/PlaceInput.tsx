@@ -42,7 +42,7 @@ export function PlaceInput({ label, value, onChange, error, autoFocus }: PlaceIn
     const timer = window.setTimeout(async () => {
       setLoading(true)
       try {
-        setResults({ query, places: await searchPlaces(query, controller.signal) })
+        setResults({ query, places: oncePerLabel(await searchPlaces(query, controller.signal)) })
         setSearchError(undefined)
       } catch (exc) {
         if (!controller.signal.aborted) {
@@ -125,4 +125,10 @@ export function PlaceInput({ label, value, onChange, error, autoFocus }: PlaceIn
       )}
     />
   )
+}
+
+/** Two suggestions that read the same cannot be told apart: keep the first of each. */
+function oncePerLabel(places: PlaceOption[]): PlaceOption[] {
+  const seen = new Set<string>()
+  return places.filter((place) => !seen.has(place.label) && Boolean(seen.add(place.label)))
 }

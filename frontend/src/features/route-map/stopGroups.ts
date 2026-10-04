@@ -59,3 +59,34 @@ export function groupStops(stops: Stop[]): StopGroup[] {
 export function groupOf(groups: StopGroup[], stopIndex: number): StopGroup | undefined {
   return groups.find((group) => group.stops.includes(stopIndex))
 }
+
+export interface ShownMarker {
+  group: StopGroup
+  /** Groups too close to this one at the current zoom, hidden under it. */
+  hidden: StopGroup[]
+}
+
+/**
+ * The markers to show at one zoom: none closer than `minPx` to a more significant
+ * one, which stands in for it. The start, pickup and drop-off always show, as does the
+ * selected stop. `at` gives a group's position on screen, in pixels.
+ */
+export function declutter(
+  groups: StopGroup[],
+  at: (group: StopGroup) => { x: number; y: number },
+  minPx: number,
+  selectedKey?: string,
+): ShownMarker[] {
+  const rank = (group: StopGroup) =>
+    group.key === selectedKey ? 0 : group.kind !== 'stop' ? 1 : 2 + PRIORITY.indexOf(group.mainKind)
+  const shown: (ShownMarker & { x: number; y: number })[] = []
+  // Sorting is stable: among equals, the earlier stop wins.
+  for (const group of [...groups].sort((a, b) => rank(a) - rank(b))) {
+    const { x, y } = at(group)
+    const always = group.key === selectedKey || group.kind !== 'stop'
+    const near = always ? undefined : shown.find((marker) => Math.hypot(marker.x - x, marker.y - y) < minPx)
+    if (near) near.hidden.push(group)
+    else shown.push({ group, hidden: [], x, y })
+  }
+  return shown.map(({ group, hidden }) => ({ group, hidden }))
+}

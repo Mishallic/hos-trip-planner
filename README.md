@@ -18,7 +18,9 @@ sheets for every day of the trip.
 **Inputs:** current location, pickup, drop-off, and the hours already used in the
 70-hour cycle. Optional: start date and time (default now), the home terminal's time
 zone, and the log header fields (driver, carrier, truck, trailer, shipper, commodity,
-load number, home terminal). All inputs live in the URL, so a plan is a shareable link.
+load number, home terminal). All inputs, and the view open, live in the URL, so a plan
+is a shareable link and Back returns to the view before. Three sample trips on the empty
+map plan in one click.
 
 **Outputs:**
 - **Route map** with the route and every stop: pre-trip inspections, pickup and
@@ -31,7 +33,8 @@ load number, home terminal). All inputs live in the URL, so a plan is a shareabl
 - **Daily log sheets** drawn like the paper form (guide p. 15-19): header, the
   24-hour grid with the duty line at exact minutes, line totals adding to 24:00,
   remarks with a bracket and a 45° flag at every stop, and the 70-hour recap. One tab
-  per day; "Print all days" gives one landscape page per day.
+  per day; "Print all days" gives one landscape page per day. A sheet that looks over a
+  limit but is not (13 hours of driving across two duty periods) says why under it.
 - **Turn-by-turn directions** with the stops in the order the driver reaches them.
 
 ## How the planner works
@@ -153,13 +156,13 @@ network panel.
 
 ## Tests
 
-Backend (294 tests), from `backend`:
+Backend (332 tests), from `backend`:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Frontend (103 tests), from `frontend`:
+Frontend (113 tests), from `frontend`:
 
 ```powershell
 npm test
@@ -173,7 +176,7 @@ npm test
   with snapshots end to end.
 - **Frontend:** the log sheet's geometry (the duty line is continuous, covers 0-1440,
   and each row is as long as its total, including the guide's John Doe day on p. 18),
-  the time scale, the shared selection, directions.
+  the time scale, the shared selection, map markers, directions, the URL state.
 - **CI** (GitHub Actions) runs ruff, pytest, lint, unit tests, the type check and the
   build on every push.
 

@@ -12,10 +12,14 @@ import type { StopSelection } from '../../state/selection'
 import { color, radius, stopColor } from '../../theme/tokens'
 import { BASEMAP } from './basemaps'
 import { iconFor } from './markers'
-import { groupOf, groupStops, type StopGroup } from './stopGroups'
+import { declutter, groupOf, groupStops, type StopGroup } from './stopGroups'
 
 /** Zoom used when centring on a stop from far out, so the spot is recognisable. */
 const CENTRE_MIN_ZOOM = 7
+/** Closer than this on screen, a marker hides under the more significant one. */
+const MIN_MARKER_GAP_PX = 30
+/** A short trip still shows its towns, not single streets. */
+const FIT_MAX_ZOOM = 13
 
 /** Pickup and drop-off pins sit above stop dots; the selected marker above both. */
 const zIndexFor = (group: StopGroup, selected: boolean) => (selected ? 1000 : group.kind === 'stop' ? 0 : 500)
@@ -31,6 +35,8 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
   const element = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map | null>(null)
   const markers = useRef<Map<string, L.Marker>>(new Map())
+  // Shows the markers that fit at this zoom; set up with the map, run again on selection.
+  const refreshMarkers = useRef<(selectedKey?: string) => void>(() => {})
   const groups = useMemo(() => groupStops(plan.stops), [plan.stops])
   const selectedGroup = selectedStop === null ? undefined : groupOf(groups, selectedStop)
 
@@ -45,7 +51,8 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
   // Build the map once per plan.
   useEffect(() => {
     if (!element.current) return
-    const instance = L.map(element.current, { zoomControl: false, attributionControl: true })
+    // Quarter zoom steps: the route fills the box instead of the next whole zoom out.
+    const instance = L.map(element.current, { zoomControl: false, attributionControl: true, zoomSnap: 0.25 })
     map.current = instance
     L.control.zoom({ position: 'bottomright' }).addTo(instance)
     instance.attributionControl.setPrefix(false)
@@ -54,9 +61,42 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
     const line = decodePolyline(plan.route.polyline)
     L.polyline(line, { color: color.turquoise, weight: 12, opacity: 0.18, className: 'route-glow', interactive: false }).addTo(instance)
     L.polyline(line, { color: '#FFFFFF', weight: 3, opacity: 0.95, className: 'route-line', interactive: false }).addTo(instance)
-    instance.fitBounds(L.latLngBounds(line), { padding: [48, 48] })
+    const bounds = L.latLngBounds(line)
+    const fitRoute = () => {
+      const box = element.current
+      const pad = box && Math.min(box.clientWidth, box.clientHeight) < 420 ? 28 : 48
+      instance.fitBounds(bounds, { padding: [pad, pad], maxZoom: FIT_MAX_ZOOM })
+    }
+    fitRoute()
 
     const created = new Map<string, L.Marker>()
+    let hiddenUnder = new Map<string, StopGroup[]>()
+    let selectedKey: string | undefined
+    const refresh = (key = selectedKey) => {
+      selectedKey = key
+      const shown = declutter(groups, (group) => instance.latLngToLayerPoint([group.lat, group.lon]), MIN_MARKER_GAP_PX, key)
+      hiddenUnder = new Map(shown.map((marker) => [marker.group.key, marker.hidden]))
+      for (const group of groups) {
+        const marker = created.get(group.key)
+        const hidden = hiddenUnder.get(group.key)
+        if (!marker) continue
+        if (!hidden) {
+          marker.remove()
+          continue
+        }
+        const isSelected = group.key === key
+        const more = hidden.reduce((count, near) => count + near.stops.length, 0)
+        const title = markerTitle(group, plan.stops, more)
+        marker.options.title = title
+        marker.setIcon(iconFor(group, isSelected, more))
+        marker.setZIndexOffset(zIndexFor(group, isSelected))
+        marker.setTooltipContent(title)
+        if (!instance.hasLayer(marker)) marker.addTo(instance)
+      }
+    }
+    refreshMarkers.current = refresh
+    instance.on('zoomend', () => refresh())
+
     for (const group of groups) {
       const marker = L.marker([group.lat, group.lon], {
         icon: iconFor(group, false),
@@ -67,8 +107,14 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
       marker.bindTooltip(markerTitle(group, plan.stops), { direction: 'top', className: 'route-tooltip' })
       marker.bindPopup(popupHtml(group, plan.stops), { className: 'route-popup', maxWidth: 300, autoPanPadding: [24, 24] })
       // A spot selects its first stop, unless one of its stops is selected already:
-      // then a click only opens or closes the popup, as Leaflet does on its own.
+      // then a click only opens or closes the popup, as Leaflet does on its own. With
+      // stops hidden under it, it also zooms in far enough to show them apart.
       const pick = () => {
+        const hidden = hiddenUnder.get(group.key) ?? []
+        if (hidden.length) {
+          const spots = [group, ...hidden].map((g): [number, number] => [g.lat, g.lon])
+          instance.flyToBounds(L.latLngBounds(spots), { padding: [64, 64], maxZoom: instance.getZoom() + 3 })
+        }
         if (current.current === null || !group.stops.includes(current.current)) select.current(group.stops[0])
       }
       marker.on('click', pick)
@@ -84,15 +130,14 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
         pick()
         marker.togglePopup()
       })
-      marker.addTo(instance)
       created.set(group.key, marker)
     }
     markers.current = created
+    refresh(current.current === null ? undefined : groupOf(groups, current.current)?.key)
 
     // The map's box can change size (columns, mobile): keep Leaflet in step. When the
     // layout itself changes (side by side to stacked), fit the route again, unless the
     // user has already moved the map.
-    const bounds = L.latLngBounds(line)
     let moved = false
     instance.on('dragstart', () => {
       moved = true
@@ -104,9 +149,7 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
       const box = element.current
       if (!box) return
       const now = { width: box.clientWidth, height: box.clientHeight }
-      if (!moved && (changed(size.width, now.width) || changed(size.height, now.height))) {
-        instance.fitBounds(bounds, { padding: [48, 48] })
-      }
+      if (!moved && (changed(size.width, now.width) || changed(size.height, now.height))) fitRoute()
       size = now
     })
     observer.observe(element.current)
@@ -121,12 +164,7 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
   // its popup. Every request runs this, so selecting a stop again reopens a popup
   // the user closed, and Leaflet pans it back into view.
   useEffect(() => {
-    for (const group of groups) {
-      const isSelected = group.key === selectedGroup?.key
-      const marker = markers.current.get(group.key)
-      marker?.setIcon(iconFor(group, isSelected))
-      marker?.setZIndexOffset(zIndexFor(group, isSelected))
-    }
+    refreshMarkers.current(selectedGroup?.key) // the selected stop always shows
     const marker = selectedGroup && markers.current.get(selectedGroup.key)
     if (!marker) return
     // A popup opened by a click sits on the small icon: move it up to the large one.
@@ -172,11 +210,12 @@ function addBasemap(map: L.Map) {
   }
 }
 
-function markerTitle(group: StopGroup, stops: Stop[]): string {
+function markerTitle(group: StopGroup, stops: Stop[], more = 0): string {
   const first = stops[group.stops[0]]
   const what =
     group.kind === 'current' ? 'Start' : group.stops.map((i) => STOP_LABEL[stops[i].kind]).join(' + ')
-  return `${what} · ${first.place ?? `mile ${first.mile}`}`
+  const nearby = more ? ` · ${more} more ${more === 1 ? 'stop' : 'stops'} nearby: zoom in` : ''
+  return `${what} · ${first.place ?? `mile ${first.mile}`}${nearby}`
 }
 
 function escapeHtml(text: string): string {

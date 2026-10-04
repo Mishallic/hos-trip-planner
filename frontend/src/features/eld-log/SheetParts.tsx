@@ -28,11 +28,20 @@ function Fitted({ x, y, width, value, size, weight = 600, color: fill = INK }: {
   )
 }
 
-/** One labelled blank of the form: the value written on the line, its caption under it. */
+/**
+ * One labelled blank of the form: the value written on the line, its caption under it.
+ * A blank left empty in the trip form reads "—", so it looks left out on purpose.
+ */
 function Field({ x, y, width, label, value, size = 14 }: { x: number; y: number; width: number; label: string; value?: string | null; size?: number }) {
   return (
     <g>
-      <Fitted x={x + 2} y={y - 5} width={width} value={value} size={size} />
+      {value ? (
+        <Fitted x={x + 2} y={y - 5} width={width} value={value} size={size} />
+      ) : (
+        <text x={x + 2} y={y - 5} fontSize={size} fill={MUTED}>
+          —
+        </text>
+      )}
       <line x1={x} x2={x + width} y1={y} y2={y} stroke={INK} strokeWidth={0.9} />
       <text x={x} y={y + 12} fontSize={9.5} fill={MUTED} letterSpacing="0.03em">
         {label}
@@ -196,10 +205,10 @@ export function Recap({ log, header, top, sinceRestart, restartToday }: { log: D
         {log.on_duty_hours}
       </text>
       <text x={circleX + 32} y={top + 58} fontSize={10} fill={MUTED}>
-        On duty hours today
+        On-duty hours today, in hours
       </text>
       <text x={circleX + 32} y={top + 71} fontSize={10} fill={MUTED}>
-        (lines 3 + 4: {hm(recap.on_duty_today_min)})
+        (lines 3 + 4: {hoursAndMinutes(recap.on_duty_today_min)})
       </text>
 
       {/* The paper form's three figures. Without the days before the trip one by one,
@@ -215,11 +224,17 @@ export function Recap({ log, header, top, sinceRestart, restartToday }: { log: D
 
       {approximate && (
         <text x={0} y={top + 112} fontSize={9.5} fill={MUTED}>
-          ≈ Approximate: the days before the trip are known only as the cycle hours entered, so A and C both count from them and come out equal (decision D12).
+          ≈ Approximate: the days before the trip are known only as the cycle hours entered, so A and C both count from them and come out equal.
         </text>
       )}
     </g>
   )
+}
+
+/** "8 h 09 min": never mistaken for the decimal hours in the circle beside it. */
+function hoursAndMinutes(minutes: number): string {
+  const [hours, mins] = hm(minutes).split(':')
+  return `${hours} h ${mins} min`
 }
 
 // Sizes the sheet needs, in SVG units: header, grid (with its totals), remarks, recap.

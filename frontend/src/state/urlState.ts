@@ -26,8 +26,26 @@ export interface TripForm {
   dropoff: PlaceValue
   cycleUsedHours: string
   startTime: string // local "YYYY-MM-DDTHH:MM" at the home terminal; empty = now
+  /** The start time was "now" when the trip was planned: editing the trip starts from now again. */
+  startAuto: boolean
   homeTz: string // IANA name; empty = the current location's zone
   header: Record<HeaderField, string>
+}
+
+export type View = 'plan' | 'logs' | 'directions'
+
+/** Which view the URL shows; the plan unless it says logs or directions. */
+export function viewFromParams(params: URLSearchParams): View {
+  const view = params.get('view')
+  return view === 'logs' || view === 'directions' ? view : 'plan'
+}
+
+/** The params with `view` set, or left out for the plan. */
+export function withView(params: URLSearchParams, view: View): URLSearchParams {
+  const next = new URLSearchParams(params)
+  if (view === 'plan') next.delete('view')
+  else next.set('view', view)
+  return next
 }
 
 const PLACES = ['current', 'pickup', 'dropoff'] as const
@@ -44,6 +62,7 @@ export function emptyForm(): TripForm {
     dropoff: { label: '' },
     cycleUsedHours: '0',
     startTime: '',
+    startAuto: false,
     homeTz: '',
     header: Object.fromEntries(HEADER_FIELDS.map((f) => [f, ''])) as Record<HeaderField, string>,
   }
@@ -58,6 +77,7 @@ export function formFromParams(params: URLSearchParams): TripForm {
   }
   form.cycleUsedHours = params.get('cycle') ?? '0'
   form.startTime = params.get('start') ?? ''
+  form.startAuto = Boolean(form.startTime) && params.get('now') === '1'
   form.homeTz = params.get('tz') ?? ''
   for (const field of HEADER_FIELDS) form.header[field] = params.get(field) ?? ''
   return form
@@ -75,6 +95,7 @@ export function paramsFromForm(form: TripForm): URLSearchParams {
   }
   params.set('cycle', form.cycleUsedHours.trim() || '0')
   if (form.startTime) params.set('start', form.startTime)
+  if (form.startTime && form.startAuto) params.set('now', '1')
   if (form.homeTz) params.set('tz', form.homeTz)
   for (const field of HEADER_FIELDS) {
     const value = form.header[field].trim()

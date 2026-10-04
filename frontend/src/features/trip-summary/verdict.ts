@@ -13,9 +13,9 @@ export interface Verdict {
  * The header badge: when the load arrives, or what stands in the way. Never a bare
  * "within limits", which every plan is by construction.
  */
-export function verdictFor(summary: Summary, stops: Stop[]): Verdict {
+export function verdictFor(summary: Summary, stops: Stop[], zone = ''): Verdict {
   const days = count(summary.sheets, 'day')
-  const arrives = arrivalTime(summary.start, summary.dropoff_arrival)
+  const arrives = `${arrivalTime(summary.start, summary.dropoff_arrival)}${zone ? ` ${zone}` : ''}`
   if (summary.restart_needed) {
     const restarts = stops.filter((s) => s.kind === 'restart')
     const restartMin = restarts.reduce((sum, s) => sum + s.duration_min, 0)

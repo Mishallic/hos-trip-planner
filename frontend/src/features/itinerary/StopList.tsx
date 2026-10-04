@@ -15,7 +15,7 @@ const MOBILE = `@media (max-width: ${layout.mobile - 1}px)`
  * Every stop in time order, as a listbox: arrow keys move the selection, Home and
  * End jump to the ends, Enter centres the map on the stop, Space selects it.
  */
-export function StopList({ stops, selection }: { stops: Stop[]; selection: StopSelection }) {
+export function StopList({ stops, selection, zone }: { stops: Stop[]; selection: StopSelection; zone: string }) {
   const { selected, request, select, centre } = selection
   const rows = useRef<(HTMLDivElement | null)[]>([])
 
@@ -67,7 +67,12 @@ export function StopList({ stops, selection }: { stops: Stop[]; selection: StopS
 
   return (
     <Card sx={{ p: 2.5 }}>
-      <CardHeading Icon={ListChecks} title="Stops" subtitle="Every stop and the rule behind it" hint={`${stops.length}`} />
+      <CardHeading
+        Icon={ListChecks}
+        title="Stops"
+        subtitle={`Each stop and its rule · times in ${zone}`}
+        hint={`${stops.length}`}
+      />
       <Box role="listbox" aria-label="Stops, in time order">
         {stops.map((stop, index) => {
           const isSelected = index === selected
@@ -132,7 +137,7 @@ export function StopList({ stops, selection }: { stops: Stop[]; selection: StopS
           )
         })}
       </Box>
-      <Typography variant="caption" component="p" sx={{ mt: 1.5, [MOBILE]: { display: 'none' } }}>
+      <Typography data-no-print variant="caption" component="p" sx={{ mt: 1.5, [MOBILE]: { display: 'none' } }}>
         ↑ ↓ move between stops · Enter centres the map
       </Typography>
     </Card>

@@ -1,12 +1,13 @@
 import { Chip, Tooltip } from '@mui/material'
 
 import type { TripPlan } from '../../api/types'
+import { zoneOf } from '../../lib/format'
 import { color } from '../../theme/tokens'
 import { verdictFor } from './verdict'
 
 /** The header's one-line answer: when it delivers, or the restart in the way. */
 export function VerdictBadge({ plan }: { plan: TripPlan }) {
-  const verdict = verdictFor(plan.summary, plan.stops)
+  const verdict = verdictFor(plan.summary, plan.stops, zoneOf(plan))
   const tone = verdict.tone === 'warn' ? color.amber : color.mint
   return (
     // describeChild: the badge keeps its visible text as its name and the detail

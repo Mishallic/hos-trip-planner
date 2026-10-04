@@ -14,7 +14,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react'
 
 import type { ApiError } from '../../api/client'
 import { HEADER_FIELDS, type HeaderField, requestFromForm, type TripForm as Form, validateForm } from '../../state/urlState'
-import { color, radius } from '../../theme/tokens'
+import { color, gradient, layout, radius } from '../../theme/tokens'
 import { PlaceInput } from './PlaceInput'
 
 // Home terminal zones across the US, Canada and Mexico. Empty = the current location's.
@@ -86,7 +86,8 @@ function ExpandedTrip({
   planning,
   error,
 }: Pick<TripFormProps, 'initial' | 'onSubmit' | 'planning' | 'error'>) {
-  const [form, setForm] = useState<Form>(initial)
+  // A start pinned from "now" when the trip was planned shows as now again.
+  const [form, setForm] = useState<Form>(() => (initial.startAuto ? { ...initial, startTime: '', startAuto: false } : initial))
   // A shared link with all three places that still cannot be planned (a cycle of 71,
   // say) shows its errors at once instead of silently doing nothing.
   const [touched, setTouched] = useState(
@@ -116,7 +117,8 @@ function ExpandedTrip({
   }
 
   return (
-    <Card component="form" ref={formRef} onSubmit={submit} noValidate sx={{ p: 2.5 }}>
+    // Visible overflow: a hidden one would stop the Plan button from sticking.
+    <Card component="form" ref={formRef} onSubmit={submit} noValidate sx={{ p: 2.5, overflow: 'visible' }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 2 }}>
         <Box
           sx={{
@@ -153,37 +155,34 @@ function ExpandedTrip({
         <PlaceInput label="Pickup" value={form.pickup} onChange={(pickup) => update({ pickup })} error={errors.pickup} />
         <PlaceInput label="Drop-off" value={form.dropoff} onChange={(dropoff) => update({ dropoff })} error={errors.dropoff} />
 
-        <Stack direction="row" spacing={1.5}>
-          <TextField
-            size="small"
-            label="Cycle used (hours)"
-            value={form.cycleUsedHours}
-            onChange={(e) => update({ cycleUsedHours: e.target.value })}
-            error={Boolean(errors.cycle_used_hours)}
-            helperText={errors.cycle_used_hours ?? 'Of 70, last 8 days'}
-            slotProps={{ htmlInput: { inputMode: 'decimal', pattern: '[0-9]*[.]?[0-9]*' } }}
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            size="small"
-            label="Start"
-            type="datetime-local"
-            value={form.startTime}
-            onChange={(e) => update({ startTime: e.target.value })}
-            error={Boolean(errors.start_time)}
-            helperText={errors.start_time ?? (form.startTime ? 'Home terminal time' : 'Empty = now')}
-            slotProps={{ inputLabel: { shrink: true } }}
-            sx={{ flex: 1.35 }}
-          />
-        </Stack>
+        <TextField
+          size="small"
+          label="Cycle used (hours)"
+          value={form.cycleUsedHours}
+          onChange={(e) => update({ cycleUsedHours: e.target.value })}
+          error={Boolean(errors.cycle_used_hours)}
+          helperText={errors.cycle_used_hours ?? 'On duty in the last 8 days, of the 70 allowed'}
+          slotProps={{ htmlInput: { inputMode: 'decimal', pattern: '[0-9]*[.]?[0-9]*' } }}
+        />
+        <TextField
+          size="small"
+          label="Start"
+          type="datetime-local"
+          value={form.startTime}
+          onChange={(e) => update({ startTime: e.target.value, startAuto: false })}
+          error={Boolean(errors.start_time)}
+          helperText={errors.start_time ?? (form.startTime ? 'At the home terminal' : 'Empty = now')}
+          slotProps={{ inputLabel: { shrink: true } }}
+        />
 
         <Button
           size="small"
           onClick={() => setShowMore((v) => !v)}
+          aria-expanded={showMore}
           endIcon={<ChevronDown size={16} style={{ transform: showMore ? 'rotate(180deg)' : undefined, transition: 'transform 150ms' }} />}
           sx={{ alignSelf: 'flex-start', color: color.textSecondary, px: 1 }}
         >
-          Time zone and log header (optional)
+          Log details and time zone (optional)
         </Button>
         <Collapse in={showMore} unmountOnExit>
           <Stack spacing={1.5}>
@@ -194,7 +193,7 @@ function ExpandedTrip({
               value={form.homeTz}
               onChange={(e) => update({ homeTz: e.target.value })}
               error={Boolean(errors.home_tz)}
-              helperText={errors.home_tz ?? 'All log times use this zone (guide p. 16)'}
+              helperText={errors.home_tz ?? 'Every time on the logs is in this zone, as the rules ask'}
             >
               {zoneOptions(form.homeTz).map(([value, label]) => (
                 <MenuItem key={value} value={value}>
@@ -219,9 +218,30 @@ function ExpandedTrip({
           </Stack>
         </Collapse>
 
-        <Button type="submit" variant="contained" size="large" disabled={planning} sx={{ py: 1.25 }}>
-          {planning ? 'Planning…' : 'Plan trip'}
-        </Button>
+        {/* Beside the map, the button stays in view when the open form is taller than the sidebar. */}
+        <Box
+          sx={{
+            [`@media (min-width: ${layout.mobile}px)`]: {
+              position: 'sticky',
+              bottom: (theme) => theme.spacing(-2),
+              zIndex: 1,
+              mx: -2.5,
+              mb: -2.5,
+              px: 2.5,
+              pb: 2.5,
+              pt: 1,
+              borderRadius: `0 0 ${radius.card}px ${radius.card}px`,
+              // The card's own tint over the page's fixed gradient: no seam when it sticks.
+              backgroundColor: color.bgMid,
+              backgroundImage: `linear-gradient(${color.card}, ${color.card}), ${gradient.page}`,
+              backgroundAttachment: 'scroll, fixed',
+            },
+          }}
+        >
+          <Button type="submit" variant="contained" size="large" fullWidth disabled={planning} sx={{ py: 1.25 }}>
+            {planning ? 'Planning…' : 'Plan trip'}
+          </Button>
+        </Box>
       </Stack>
     </Card>
   )

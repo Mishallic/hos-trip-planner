@@ -2,10 +2,11 @@ import { Box, ButtonBase, LinearProgress, Stack, Tooltip, Typography } from '@mu
 import { FileText, Map, Navigation } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import type { View } from '../state/urlState'
 import { color, layout, radius } from '../theme/tokens'
 import { BrandMark } from './BrandMark'
 
-export type View = 'plan' | 'logs' | 'directions'
+export type { View }
 
 const NAV: { view: View; label: string; Icon: typeof Map }[] = [
   { view: 'plan', label: 'Plan', Icon: Map },
@@ -181,6 +182,7 @@ function Rail({ view, onViewChange }: Pick<AppShellProps, 'view' | 'onViewChange
                   boxShadow: active ? '0 4px 16px rgba(0, 139, 139, 0.45)' : 'none',
                   transition: 'background 120ms, color 120ms',
                   '&:hover': { color: color.text, background: active ? color.teal : color.chip },
+                  '&.Mui-focusVisible': { outline: `2px solid ${color.turquoise}`, outlineOffset: 2 },
                 }}
               >
                 <Icon size={19} strokeWidth={1.9} />
@@ -220,7 +222,12 @@ function BottomNav({ view, onViewChange }: Pick<AppShellProps, 'view' | 'onViewC
             key={item}
             aria-current={active ? 'page' : undefined}
             onClick={() => onViewChange(item)}
-            sx={{ flexDirection: 'column', gap: 0.5, color: active ? color.turquoise : color.textMuted }}
+            sx={{
+              flexDirection: 'column',
+              gap: 0.5,
+              color: active ? color.turquoise : color.textMuted,
+              '&.Mui-focusVisible': { outline: `2px solid ${color.turquoise}`, outlineOffset: -4, borderRadius: `${radius.button}px` },
+            }}
           >
             <Box
               sx={{

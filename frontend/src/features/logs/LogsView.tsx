@@ -1,11 +1,11 @@
 import { Box, Button, GlobalStyles, Stack, Tab, Tabs, Typography } from '@mui/material'
-import { Printer, ZoomIn, ZoomOut } from 'lucide-react'
+import { Info, Printer, ZoomIn, ZoomOut } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { DailyLog, TripPlan } from '../../api/types'
 import type { StopSelection } from '../../state/selection'
 import { color, layout, radius, shadow } from '../../theme/tokens'
-import { LogSheet } from '../eld-log/LogSheet'
+import { FrozenRowLabels, LABELS_WIDTH, LogSheet } from '../eld-log/LogSheet'
 import { minuteX, SHEET, stopOnSheet } from '../eld-log/logGeometry'
 
 const MOBILE = `@media (max-width: ${layout.mobile - 1}px)`
@@ -165,19 +165,39 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
               <Box
                 sx={{
                   minWidth: zoomed ? SHEET_MIN_WIDTH : 0,
-                  // One sheet per landscape page: sized by the page's height, which binds first.
-                  [PRINT]: { minWidth: 0, breakInside: 'avoid', '& svg': { width: 'auto !important', height: '186mm !important', maxWidth: '100%', mx: 'auto' } },
+                  // The frozen labels and the sheet share one cell, the labels on top.
+                  display: 'grid',
+                  '& > *': { gridArea: '1 / 1' },
+                  // One sheet per landscape page: sized by the page's height, which binds
+                  // first, and a little shorter when notes follow it.
+                  [PRINT]: {
+                    minWidth: 0,
+                    display: 'block',
+                    breakInside: 'avoid',
+                    '& svg': { width: 'auto !important', height: `${log.notes?.length ? 172 : 186}mm !important`, maxWidth: '100%', mx: 'auto' },
+                  },
                 }}
               >
-                <LogSheet
-                  log={log}
-                  selected={spans[index]}
-                  header={plan.log_header}
-                  day={index + 1}
-                  days={plan.logs.length}
-                  carried={plan.logs.slice(0, index).flatMap((d) => d.remarks).at(-1)}
-                  sinceRestart={sinceRestart[index]}
-                />
+                {scrolls && index === day && (
+                  <Box
+                    data-no-print
+                    // left: the scroller's padding, so the labels meet the card's edge.
+                    sx={{ position: 'sticky', left: (theme) => theme.spacing(-1), zIndex: 1, width: `${(LABELS_WIDTH / SHEET.width) * 100}%`, alignSelf: 'start', pointerEvents: 'none' }}
+                  >
+                    <FrozenRowLabels log={log} carried={carriedInto(plan.logs, index)} />
+                  </Box>
+                )}
+                <Box>
+                  <LogSheet
+                    log={log}
+                    selected={spans[index]}
+                    header={plan.log_header}
+                    day={index + 1}
+                    days={plan.logs.length}
+                    carried={carriedInto(plan.logs, index)}
+                    sinceRestart={sinceRestart[index]}
+                  />
+                </Box>
               </Box>
             </Box>
             {scrolls && (
@@ -185,11 +205,32 @@ export function LogsView({ plan, selection }: { plan: TripPlan; selection: StopS
                 Scroll sideways for the whole day.
               </Typography>
             )}
+            {log.notes && log.notes.length > 0 && (
+              <Box
+                component="ul"
+                aria-label="Notes on this sheet"
+                sx={{ listStyle: 'none', m: 0, mt: 1.5, p: 0, display: 'grid', gap: 0.75, maxWidth: 900, '@media print': { mt: '2mm' } }}
+              >
+                {log.notes.map((note) => (
+                  <Box component="li" key={note} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', fontSize: 12.5, lineHeight: 1.45, color: color.paperMuted }}>
+                    <Box component="span" sx={{ display: 'flex', mt: '2px', color: color.paperLine, flexShrink: 0 }}>
+                      <Info size={15} aria-hidden />
+                    </Box>
+                    {note}
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Box>
         ))}
       </Box>
     </Box>
   )
+}
+
+/** The last remark of the days before: names a stop that carries on into this day. */
+function carriedInto(logs: DailyLog[], index: number) {
+  return logs.slice(0, index).flatMap((day) => day.remarks).at(-1)
 }
 
 /** Whether the shown sheet's card is narrower than the sheet's readable width. */

@@ -59,6 +59,18 @@ export const theme = createTheme({
         '@media print': {
           // Tooltips are portalled to the body, outside anything marked.
           '[data-no-print], .MuiTooltip-popper': { display: 'none !important' },
+          'html, body': { background: '#fff !important' },
+          // The plan and directions print as ink on white: browsers leave background
+          // colours out by default, which would leave white text on white paper.
+          '[data-print-light], [data-print-light] *': {
+            color: `${color.paperInk} !important`,
+            backgroundColor: 'transparent !important',
+            backgroundImage: 'none !important',
+            boxShadow: 'none !important',
+            textShadow: 'none !important',
+            borderColor: '#C9CED3 !important',
+          },
+          '[data-print-only]': { display: 'block !important' },
         },
       },
     },
