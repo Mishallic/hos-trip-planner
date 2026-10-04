@@ -14,6 +14,8 @@ from planner.domain.policy import DEFAULT_POLICY
 
 from .hos_helpers import H, check_all, first, plan, timeline
 
+WITHOUT_D20 = replace(DEFAULT_POLICY, min_drive_min=0)
+
 # The D7 and D15 tests switch off fuelling before a rest (D16), which would move
 # their fuel stops to the rest before them. TestFuelBeforeRest covers D16.
 NO_EARLY_FUEL = replace(DEFAULT_POLICY, fuel_before_rest=False)
@@ -58,8 +60,9 @@ class TestPreTrip:
         ]
 
     def test_restart_mid_trip_is_followed_by_a_pre_trip(self):
-        # 65 h used + 30 min pre-trip + 4.5 h driving = 70 h at 5 h.
-        events = plan(6 * H, 1 * H, cycle_used_min=65 * H)
+        # 65 h used + 30 min pre-trip + 4.5 h driving = 70 h at 5 h. The trip is long
+        # enough that driving those hours first beats restarting before it starts.
+        events = plan(6 * H, 6 * H, cycle_used_min=65 * H)
 
         assert timeline(events)[:5] == [
             ("pre_trip", 0, 30),
@@ -96,7 +99,7 @@ class TestPreTrip:
     def test_pre_trip_counts_toward_the_cycle(self):
         # Guide p. 10: 67 h + 0.5 pre-trip + 1 h drive + 1 h pickup = 69.5 h, so only
         # 30 min of driving fits before the restart. Without counting it, 1 h would.
-        events = plan(1 * H, 1 * H, cycle_used_min=67 * H)
+        events = plan(1 * H, 11 * H, cycle_used_min=67 * H)
 
         assert first(events, "restart").start_min == 3 * H
 
@@ -124,18 +127,41 @@ class TestPreTrip:
             ("dropoff", 4 * H + 30, 5 * H + 30),
         ]
 
-    def test_starting_at_the_pickup_at_seventy_inspects_after_the_restart(self):
-        # D14: the pickup still happens, but no driving fits before the restart, so
-        # an inspection before it would be wasted.
+    def test_starting_at_the_pickup_at_seventy_restarts_then_inspects_and_loads(self):
+        # Loading first (D14) would end at the same minute, but with an hour worked
+        # past 70; on a tie the plan within the 70 hours wins (D19).
         events = plan(0, 2 * H, cycle_used_min=70 * H)
 
         assert timeline(events) == [
-            ("pickup", 0, 1 * H),
-            ("restart", 1 * H, 35 * H),
-            ("pre_trip", 35 * H, 35 * H + 30),
+            ("restart", 0, 34 * H),
+            ("pre_trip", 34 * H, 34 * H + 30),
+            ("pickup", 34 * H + 30, 35 * H + 30),
             ("driving", 35 * H + 30, 37 * H + 30),
             ("dropoff", 37 * H + 30, 38 * H + 30),
         ]
+
+    def test_no_short_drive_between_loading_and_a_restart(self):
+        # D20: 68 h + 30 min pre-trip + 23 min drive + 1 h pickup leaves 7 minutes.
+        # Driving them and then restarting looks like a mistake on the log; the driver
+        # restarts at the shipper instead, and the drop-off is no later.
+        events = plan(23, 22 * H, cycle_used_min=68 * H)
+        without = plan(23, 22 * H, cycle_used_min=68 * H, policy=WITHOUT_D20)
+
+        assert [e.activity.value for e in events][:4] == [
+            "pre_trip", "driving", "pickup", "restart",
+        ]  # fmt: skip
+        assert [(e.activity.value, e.duration_min) for e in without][3] == ("driving", 7)
+        assert events[-1].end_min == without[-1].end_min
+
+    def test_a_short_first_shift_is_traded_for_a_restart_before_the_trip(self):
+        # D19: at 67 h, inspecting, driving 1 h, loading and driving 30 min, then
+        # restarting, needs a second inspection. Restarting first ends 30 min sooner.
+        events = plan(1 * H, 1 * H, cycle_used_min=67 * H)
+
+        assert [e.activity.value for e in events] == [
+            "restart", "pre_trip", "driving", "pickup", "driving", "dropoff",
+        ]  # fmt: skip
+        assert events[-1].end_min == 38 * H + 30
 
 
 class TestFuel:

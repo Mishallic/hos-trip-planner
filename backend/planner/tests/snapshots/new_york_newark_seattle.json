@@ -1,5 +1,5 @@
 {
-  "response_sha256": "2a60707877015b4966c22e012f8aaf8f1842460fdc09cee642f66ec3a064ce44",
+  "response_sha256": "f251ff17f7339be2466f64d13dea79ac606b2d6f151c97616ac0db788986d2a2",
   "summary": {
     "from": "New York, NY",
     "pickup": "Newark, NJ",
@@ -22,30 +22,30 @@
     "sheets": 6
   },
   "stops": [
-    "2026-10-05T07:00  pre_trip mile     0.0  New York City, NY",
+    "2026-10-05T07:00  pre_trip mile     0.0  New York, NY",
     "2026-10-05T07:53  pickup   mile    10.3  Newark, NJ",
-    "2026-10-05T09:00  restart  mile    16.7  West Orange, NJ  [cycle_limit]",
-    "2026-10-06T19:00  pre_trip mile    16.7  West Orange, NJ",
-    "2026-10-07T03:30  break    mile   456.7  Strongsville, OH  [break_required]",
-    "2026-10-07T07:00  rest     mile   621.6  near Fremont, IN  [driving_limit]",
-    "2026-10-07T17:00  pre_trip mile   621.6  near Fremont, IN",
+    "2026-10-05T08:53  restart  mile    10.3  Newark, NJ  [cycle_limit]",
+    "2026-10-06T18:53  pre_trip mile    10.3  Newark, NJ",
+    "2026-10-07T03:23  break    mile   450.2  Broadview Heights, OH  [break_required]",
+    "2026-10-07T06:53  rest     mile   615.2  near Montpelier, OH  [driving_limit]",
+    "2026-10-07T16:53  pre_trip mile   615.2  near Montpelier, OH",
     "2026-10-08T00:22  fuel     mile   999.2  near Mauston, WI  [fuel_interval]",
-    "2026-10-08T05:00  rest     mile  1226.5  Rogers, MN  [driving_limit]",
-    "2026-10-08T15:00  pre_trip mile  1226.5  Rogers, MN",
-    "2026-10-08T23:30  break    mile  1666.5  near Beulah, ND  [break_required]",
-    "2026-10-09T03:00  rest     mile  1831.4  near West Glendive, MT  [driving_limit]",
-    "2026-10-09T13:00  pre_trip mile  1831.4  near West Glendive, MT",
+    "2026-10-08T04:53  rest     mile  1220.1  Corcoran, MN  [driving_limit]",
+    "2026-10-08T14:53  pre_trip mile  1220.1  Corcoran, MN",
+    "2026-10-08T23:23  break    mile  1660.0  near Mandan, ND  [break_required]",
+    "2026-10-09T02:53  rest     mile  1825.0  West Glendive, MT  [driving_limit]",
+    "2026-10-09T12:53  pre_trip mile  1825.0  West Glendive, MT",
     "2026-10-09T16:33  fuel     mile  1999.1  near Hardin, MT  [fuel_interval]",
-    "2026-10-10T01:00  rest     mile  2436.3  near Plains, MT  [driving_limit]",
-    "2026-10-10T11:00  pre_trip mile  2436.3  near Plains, MT",
+    "2026-10-10T00:53  rest     mile  2429.9  near Frenchtown, MT  [driving_limit]",
+    "2026-10-10T10:53  pre_trip mile  2429.9  near Frenchtown, MT",
     "2026-10-10T19:13  dropoff  mile  2860.7  Seattle, WA"
   ],
   "sheets": [
-    "2026-10-05  off 22:00  sb  0:00  dr  0:30  on  1:30    16.7 mi  recap A 70.00 h",
-    "2026-10-06  off 19:00  sb  0:00  dr  4:30  on  0:30   247.5 mi  recap A 5.00 h",
-    "2026-10-07  off  0:30  sb 10:00  dr 13:00  on  0:30   714.9 mi  recap A 18.50 h",
-    "2026-10-08  off  0:30  sb 10:00  dr 12:30  on  1:00   687.4 mi  recap A 32.00 h",
-    "2026-10-09  off  0:00  sb 10:00  dr 13:00  on  1:00   714.9 mi  recap A 46.00 h",
-    "2026-10-10  off  3:47  sb 10:00  dr  8:43  on  1:30   479.3 mi  recap A 56.22 h"
+    "2026-10-05  off 22:07  sb  0:00  dr  0:23  on  1:30    10.3 mi  recap A 69.88 h",
+    "2026-10-06  off 18:53  sb  0:00  dr  4:37  on  0:30   253.9 mi  recap A 5.12 h",
+    "2026-10-07  off  0:30  sb 10:00  dr 13:00  on  0:30   714.9 mi  recap A 18.62 h",
+    "2026-10-08  off  0:30  sb 10:00  dr 12:30  on  1:00   687.4 mi  recap A 32.12 h",
+    "2026-10-09  off  0:00  sb 10:00  dr 13:00  on  1:00   714.9 mi  recap A 46.12 h",
+    "2026-10-10  off  3:47  sb 10:00  dr  8:43  on  1:30   479.3 mi  recap A 56.33 h"
   ]
 }

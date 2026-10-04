@@ -4,6 +4,7 @@ resolve places -> route -> time zone -> engine -> clocks -> daily logs -> stop n
 -> one lean, JSON-ready response.
 """
 
+import re
 from collections import Counter
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -14,7 +15,7 @@ from time import perf_counter
 from zoneinfo import ZoneInfo
 
 from planner.domain.clocks import clocks_before_each_event
-from planner.domain.explain import explain_stop, hm
+from planner.domain.explain import explain_stop, hm, sheet_notes
 from planner.domain.geometry import RoutePath, decode_polyline, encode_polyline, simplify
 from planner.domain.hos_engine import plan_trip
 from planner.domain.log_builder import build_daily_logs
@@ -37,6 +38,7 @@ from planner.providers.nominatim import NominatimGeocoder
 from planner.providers.osrm import OsrmRouter
 from planner.providers.photon import PhotonGeocoder
 from planner.providers.places import nearest_town
+from planner.providers.regions import COUNTRIES
 from planner.providers.timezones import timezone_at, utc_offset_min
 
 COORD_DP = 5
@@ -164,7 +166,13 @@ def plan(
     path = RoutePath(
         [(leg.distance_miles, leg.points) for leg in (route.to_pickup, route.to_dropoff)]
     )
-    names: dict[float, str | None] = {}
+    # The start, pickup and drop-off are where the user said; other stops are named
+    # after the nearest town (D18).
+    total_miles = legs[0].distance_miles + legs[1].distance_miles
+    endpoints = ((0.0, current), (legs[0].distance_miles, pickup), (total_miles, dropoff))
+    names: dict[float, str | None] = {
+        round(mile, 1): _town_of(place, providers.towns) for mile, place in endpoints
+    }
 
     def place_at(mile: float) -> tuple[float, float, str | None]:
         lat, lon = path.locate(mile)
@@ -181,10 +189,11 @@ def plan(
 
     response = {
         "summary": _summary(events, legs, logs, at, current, pickup, dropoff),
+        "warnings": _warnings(route),
         "stops": _stops(events, clocks, at, place_at, policy),
         "timeline": _timeline(events, clocks, at),
         "route": _route(route, legs),
-        "logs": [_log(log, place_at) for log in logs],
+        "logs": [_log(log, place_at, policy) for log in logs],
         "log_header": {
             **{key: value for key, value in request.header.items() if value},
             "time_zone": tz_name,
@@ -221,6 +230,30 @@ def _resolve(field_name: str, given: PlaceInput, providers: Providers) -> Place:
             f'No place in the US, Canada or Mexico matches "{given.query}".',
         )
     return found[0]
+
+
+REGION_CODE = re.compile(r"[A-Z]{2,3}")  # "TX", "QC", "NLE"
+
+
+def _town_of(place: Place, towns: ReverseGeocoder) -> str | None:
+    """ "City, ST" for a place the user named: "Saint Louis, MO" for "Washington
+    University in St. Louis, Saint Louis, MO". The nearest town when the label has none."""
+    parts = [part.strip() for part in place.label.split(",") if part.strip()]
+    if parts and parts[-1] in COUNTRIES.values():
+        parts.pop()  # "Montreal, QC, Canada" is "Montreal, QC" on a log
+    if len(parts) >= 2 and REGION_CODE.fullmatch(parts[-1]):
+        return ", ".join(parts[-2:])
+    return towns.city_state(place.lat, place.lon)
+
+
+def _warnings(route: Route) -> list[str]:
+    ferry_miles = route.to_pickup.ferry_miles + route.to_dropoff.ferry_miles
+    if ferry_miles < 0.5:
+        return []
+    return [
+        f"The route crosses {ferry_miles:,.0f} miles by ferry, planned as driving: "
+        "stops near the crossing may differ."
+    ]
 
 
 def _summary(events, legs, logs, at, current, pickup, dropoff) -> dict:
@@ -318,7 +351,7 @@ def _route(route: Route, legs: list[Leg]) -> dict:
     }
 
 
-def _log(log, place_at) -> dict:
+def _log(log, place_at, policy) -> dict:
     return {
         "date": log.date.isoformat(),
         "starts_at": log.starts_at.isoformat(timespec="minutes"),
@@ -353,4 +386,5 @@ def _log(log, place_at) -> dict:
             "available_tomorrow_min": log.recap.available_tomorrow_min,
             "approximate": True,  # D12
         },
+        "notes": sheet_notes(log, policy),
     }

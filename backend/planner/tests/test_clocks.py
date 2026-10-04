@@ -1,10 +1,13 @@
 """The driver's clocks and the plain-language reason for each stop."""
 
+from datetime import datetime
+
 from hypothesis import given
 
 from planner.domain.clocks import Clocks, clocks_before_each_event
-from planner.domain.explain import explain_stop, hm
+from planner.domain.explain import explain_stop, hm, sheet_notes
 from planner.domain.hos_engine import plan_trip
+from planner.domain.log_builder import build_daily_logs
 from planner.domain.models import Activity, DutyStatus, TripInput
 from planner.domain.policy import DEFAULT_POLICY, HOUR
 
@@ -38,7 +41,7 @@ def test_clocks_run_down_and_a_rest_refills_them():
 
 
 def test_restart_refills_the_cycle():
-    events, clocks = plan_with_clocks(6 * H, 1 * H, cycle_used_min=65 * H)
+    events, clocks = plan_with_clocks(6 * H, 6 * H, cycle_used_min=65 * H)
     restart = next(i for i, e in enumerate(events) if e.activity is Activity.RESTART)
 
     assert clocks[restart].cycle_left_min == 0
@@ -77,14 +80,39 @@ class TestExplanations:
         assert text == "30-minute break required after 8:00 of driving."
 
     def test_restart_when_the_cycle_is_used_up(self):
-        text = self.explain(6 * H, 1 * H, cycle_used_min=65 * H)["restart"]
+        text = self.explain(6 * H, 6 * H, cycle_used_min=65 * H)["restart"]
 
         assert text == "70-hour cycle used up. 34 hours off duty restart it."
 
     def test_restart_instead_of_a_rest_says_why(self):
         text = self.explain(12 * H, 1 * H, cycle_used_min=58 * H)["restart"]
 
-        assert text.startswith("Only 0:30 left in the 70-hour cycle, not enough")
+        assert text == (
+            "Only 0:30 left in the 70-hour cycle, and the rest of the trip needs 3:30 on "
+            "duty, so a restart is needed anyway: 34 hours off now, in place of a 10-hour rest."
+        )
+
+    def test_restart_before_the_trip_says_why(self):
+        assert self.explain(1 * H, 1 * H, cycle_used_min=67 * H)["restart"] == (
+            "Only 3:00 left in the 70-hour cycle, too little for this trip, so it starts "
+            "with a 34-hour restart."
+        )
+        assert self.explain(0, 2 * H, cycle_used_min=70 * H)["restart"] == (
+            "70-hour cycle used up, so the trip starts with a 34-hour restart."
+        )
+
+    def test_restart_instead_of_a_short_drive_says_why(self):  # D20
+        text = self.explain(23, 22 * H, cycle_used_min=68 * H)["restart"]
+
+        assert text == (
+            "Only 0:07 left in the 70-hour cycle, too little to be worth driving, so the "
+            "34-hour restart starts here."
+        )
+
+    def test_work_past_seventy_says_it_is_allowed(self):  # D14
+        text = self.explain(7 * H + 30, 30, cycle_used_min=60 * H)["dropoff"]
+
+        assert text.endswith("Allowed past 70 hours: the limit stops driving, not work.")
 
     def test_fuel_on_the_road(self):
         events = plan_trip(
@@ -103,6 +131,35 @@ class TestExplanations:
 
         assert set(texts) >= {"pre_trip", "pickup", "dropoff", "fuel", "break", "rest"}
         assert all(texts.values())
+
+
+class TestSheetNotes:
+    """A sheet that seems over a limit says why it is not."""
+
+    def notes(self, to_pickup_min, to_dropoff_min, cycle_used_min):
+        events, _ = plan_with_clocks(to_pickup_min, to_dropoff_min, cycle_used_min)
+        logs = build_daily_logs(events, datetime(2026, 10, 5, 7, 0), -300, cycle_used_min)
+        return {log.date.isoformat(): sheet_notes(log) for log in logs}
+
+    def test_more_than_eleven_hours_of_driving_on_a_sheet(self):
+        notes = self.notes(23, 22 * H, cycle_used_min=68 * H)
+
+        assert notes["2026-10-07"] == [
+            "13:00 of driving on one sheet is within the rules: the 11-hour limit counts "
+            "from the last 10-hour rest, not from midnight, and this day holds parts of "
+            "two duty periods."
+        ]
+
+    def test_more_than_seventy_hours_in_the_recap(self):
+        notes = self.notes(7 * H + 30, 30, cycle_used_min=60 * H)
+
+        assert notes["2026-10-05"] == [
+            "70:30 on duty in the cycle is within the rules: past 70 hours the driver may "
+            "still work, but not drive, until a 34-hour restart."
+        ]
+
+    def test_an_ordinary_day_has_none(self):
+        assert self.notes(2 * H, 3 * H, cycle_used_min=20 * H) == {"2026-10-05": []}
 
 
 def test_hm():

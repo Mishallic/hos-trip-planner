@@ -63,11 +63,13 @@ def _leg(leg: dict, destination: str) -> RouteLeg:
         if points and step_points and step_points[0] == points[-1]:
             step_points = step_points[1:]  # steps share their joining point
         points.extend(step_points)
+    ferry_meters = sum(step["distance"] for step in leg["steps"] if step.get("mode") == "ferry")
     return RouteLeg(
         distance_miles=leg["distance"] / METERS_PER_MILE,
         duration_min=leg["duration"] / 60,
         points=tuple(points),
         steps=tuple(_step(step, destination) for step in leg["steps"]),
+        ferry_miles=ferry_meters / METERS_PER_MILE,
     )
 
 

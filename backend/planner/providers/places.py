@@ -17,7 +17,7 @@ from planner.domain.geometry import haversine_miles
 DATA_FILE = Path(__file__).parent / "data" / "places_us_ca_mx.tsv.gz"
 CELL_DEG = 0.5  # grid cell size in degrees, about 35 miles north-south
 MILES_PER_DEG_LAT = 69.0
-MAX_SEARCH_MILES = 150.0  # beyond this, a point is not near any town worth naming
+MAX_SEARCH_MILES = 400.0  # far enough to name any point on a road in the three countries
 
 
 class NearestTown:
@@ -92,7 +92,7 @@ def _cell(lat: float, lon: float) -> tuple[int, int]:
 
 
 def _search_radii():
-    yield from (10.0, 25.0, 50.0, 100.0, MAX_SEARCH_MILES)
+    yield from (10.0, 25.0, 50.0, 100.0, 200.0, MAX_SEARCH_MILES)
 
 
 @cache

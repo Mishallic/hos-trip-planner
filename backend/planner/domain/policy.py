@@ -37,6 +37,9 @@ class HOSPolicy:
     fuel_merge_window_min: int = 60  # D15: fuel due this soon is taken at the break instead
     fuel_before_rest: bool = True  # D16: fuel before a rest when the tank won't last the next shift
     max_avg_speed_mph: float = 55.0  # D8
+    # D20: no drive shorter than this just before a rest, restart or break, when taking
+    # the stop where the driver is costs no restart and at most this long. 0 turns it off.
+    min_drive_min: int = 15
     rest_status: DutyStatus = DutyStatus.SLEEPER_BERTH  # D5
     break_status: DutyStatus = DutyStatus.OFF_DUTY  # D5
     restart_status: DutyStatus = DutyStatus.OFF_DUTY  # D11

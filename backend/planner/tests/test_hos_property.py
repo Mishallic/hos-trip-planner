@@ -8,7 +8,7 @@ is also compared with the rule it replaced: never more restarts, never a later e
 
 import itertools
 import time
-from dataclasses import astuple
+from dataclasses import astuple, replace
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
@@ -105,9 +105,14 @@ def restarts_and_end(events: list[Event]) -> tuple[int, int]:
     return sum(e.activity is Activity.RESTART for e in events), events[-1].end_min
 
 
+# D20 may end a plan up to 15 minutes later to avoid a short drive, so D19 is
+# compared with it turned off, and D20 has its own test below.
+WITHOUT_D20 = replace(DEFAULT_POLICY, min_drive_min=0)
+
+
 def no_worse_than_before_d19(trip: TripInput) -> str | None:
     """None, or why the plan takes more restarts or ends later than before D19."""
-    now = plan_trip(trip)
+    now = plan_trip(trip, WITHOUT_D20)
     check_all(now, trip, DEFAULT_POLICY)
     restarts, end = restarts_and_end(now)
     restarts_before, end_before = restarts_and_end(PreviousRestartRule(trip, DEFAULT_POLICY).run())
@@ -150,6 +155,31 @@ def test_d19_on_a_grid_of_trips():
     ]
 
     assert worse == []
+
+
+@PROPERTY_SETTINGS
+@given(trip=st.one_of(trips, long_trips))
+def test_d20_costs_no_restart_and_at_most_a_quarter_hour(trip):
+    plan = plan_trip(trip)
+    without = plan_trip(trip, WITHOUT_D20)
+
+    check_all(plan, trip, DEFAULT_POLICY)
+    restarts, end = restarts_and_end(plan)
+    restarts_without, end_without = restarts_and_end(without)
+    assert restarts <= restarts_without
+    assert end <= end_without + DEFAULT_POLICY.min_drive_min
+    if end > end_without:
+        assert not short_drive_before_a_stop(plan)
+
+
+def short_drive_before_a_stop(events: list[Event]) -> bool:
+    stops = {Activity.REST, Activity.RESTART, Activity.BREAK}
+    return any(
+        event.activity is Activity.DRIVING
+        and event.duration_min < DEFAULT_POLICY.min_drive_min
+        and following.activity in stops
+        for event, following in itertools.pairwise(events)
+    )
 
 
 def steady_leg(miles: float, mph: float) -> Leg:

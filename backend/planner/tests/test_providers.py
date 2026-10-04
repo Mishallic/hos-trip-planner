@@ -126,6 +126,19 @@ class TestOsrmRoute:
 
         assert haversine_miles(pickup, (CHICAGO.lat, CHICAGO.lon)) < 1
 
+    def test_ferry_crossings_are_counted(self):
+        recorded = json.loads((FIXTURES / "osrm_route_ok.json").read_text(encoding="utf-8"))
+        assert all(s["mode"] == "driving" for leg in recorded["body"]["routes"][0]["legs"]
+                   for s in leg["steps"])  # fmt: skip
+        step = recorded["body"]["routes"][0]["legs"][1]["steps"][2]
+        step["mode"] = "ferry"
+        osrm, _ = router(httpx.Response(200, json=recorded["body"]))
+
+        route = osrm.route(JOLIET, CHICAGO, GARY)
+
+        assert route.to_pickup.ferry_miles == 0
+        assert route.to_dropoff.ferry_miles == pytest.approx(step["distance"] / 1609.344)
+
     def test_no_road_between_the_places_is_unroutable(self):
         osrm, _ = router(fixture("osrm_route_noroute"))
 

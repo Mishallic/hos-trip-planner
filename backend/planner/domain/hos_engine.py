@@ -6,6 +6,7 @@ minutes since the trip starts and miles along the route (see models.py).
 Limits come from HOSPolicy; nothing here hard-codes a number.
 """
 
+import itertools
 import math
 from dataclasses import dataclass
 
@@ -25,17 +26,71 @@ def plan_trip(trip: TripInput, policy: HOSPolicy = DEFAULT_POLICY) -> list[Event
 
     D19: when to take a 34-hour restart early depends on work still to come, which
     the engine can only estimate. So it plans the trip with each restart rule and
-    keeps the plan with the fewest restarts, then the earliest drop-off.
+    keeps the plan with the fewest restarts, then the earliest drop-off, then the
+    least work past 70 hours.
+
+    D20: a plan that drives a few minutes and then stops for a rest looks like a
+    mistake on the log. When the best plan has such a drive, the trip is planned
+    again taking those stops where the driver is, and that plan wins when it costs no
+    restart and at most `min_drive_min` minutes.
     """
     if trip.cycle_used_min > policy.cycle_limit_min:
         raise ValueError(f"cycle hours used cannot exceed {policy.cycle_limit_min // 60} hours")
-    schedulers = (_Scheduler, _OneRestartCovers, _DriveCycleOut)
-    plans = [scheduler(trip, policy).run() for scheduler in schedulers]
-    return min(plans, key=lambda events: (_restarts(events), events[-1].end_min))
+    best = _best_plan(trip, policy, min_drive_min=1)
+    if policy.min_drive_min > 1 and _short_drive_before_stop(best, policy.min_drive_min):
+        smooth = _best_plan(trip, policy, policy.min_drive_min)
+        if (
+            _restarts(smooth) <= _restarts(best)
+            and smooth[-1].end_min <= best[-1].end_min + policy.min_drive_min
+        ):
+            return smooth
+    return best
+
+
+def _best_plan(trip: TripInput, policy: HOSPolicy, min_drive_min: int) -> list[Event]:
+    schedulers: list[type[_Scheduler]] = [_Scheduler, _OneRestartCovers, _DriveCycleOut]
+    if _RestartFirst.worth_trying(trip, policy):
+        schedulers.append(_RestartFirst)
+    plans = [scheduler(trip, policy, min_drive_min).run() for scheduler in schedulers]
+    return min(
+        plans,
+        key=lambda events: (
+            _restarts(events),
+            events[-1].end_min,
+            _minutes_past_cycle(events, trip.cycle_used_min, policy),
+        ),
+    )
 
 
 def _restarts(events: list[Event]) -> int:
     return sum(event.activity is Activity.RESTART for event in events)
+
+
+STOPS_AFTER_A_SHORT_DRIVE = frozenset({Activity.REST, Activity.RESTART, Activity.BREAK})
+
+
+def _short_drive_before_stop(events: list[Event], min_drive_min: int) -> bool:
+    return any(
+        event.activity is Activity.DRIVING
+        and event.duration_min < min_drive_min
+        and following.activity in STOPS_AFTER_A_SHORT_DRIVE
+        for event, following in itertools.pairwise(events)
+    )
+
+
+def _minutes_past_cycle(events: list[Event], cycle_used_min: int, policy: HOSPolicy) -> int:
+    """On-duty minutes worked beyond the 70 hours: allowed (D14), but best avoided."""
+    cycle, off_streak, past = cycle_used_min, 0, 0
+    for event in events:
+        if event.status in OFF_STATUSES:
+            off_streak += event.duration_min
+            if off_streak >= policy.restart_min:
+                cycle = 0
+            continue
+        off_streak = 0
+        before, cycle = cycle, cycle + event.duration_min
+        past += max(0, cycle - max(before, policy.cycle_limit_min))
+    return past
 
 
 @dataclass
@@ -57,9 +112,11 @@ class _Clocks:
 
 
 class _Scheduler:
-    def __init__(self, trip: TripInput, policy: HOSPolicy) -> None:
+    def __init__(self, trip: TripInput, policy: HOSPolicy, min_drive_min: int = 1) -> None:
         self.trip = trip
         self.policy = policy
+        # The shortest drive worth starting before a required stop (D20); 1 = any.
+        self.min_drive_min = max(1, min_drive_min)
         self.clocks = _Clocks(cycle_used_min=trip.cycle_used_min)
         self.now = 0
         self.mile = 0.0
@@ -91,7 +148,7 @@ class _Scheduler:
             return  # not the start of a duty period, or nothing to drive afterwards
         work_min = self.policy.pre_trip_min + self.policy.pickup_min
         after_min, _ = self._driving_allowance(work_min, on_duty=True)
-        if after_min > 0:
+        if after_min >= self.min_drive_min:
             self._record(Activity.PRE_TRIP, self.policy.pre_trip_min)
 
     def _drive_leg(self, leg: Leg) -> None:
@@ -104,19 +161,21 @@ class _Scheduler:
             if stops_in_a_row > MAX_STOPS_WITHOUT_DRIVING:
                 raise RuntimeError(f"no stop lets driving resume at minute {self.now}")
             stops_in_a_row += 1
+            # Less driving than this before a limit stops it: take the stop first (D20).
+            too_short_min = min(self.min_drive_min, leg.drive_min - driven_min)
 
             if self.policy.pre_trip_min and not self.clocks.pre_trip_done:
                 # D4: inspect before the first drive of each duty period, unless a limit
                 # would leave no driving time after it; that stop then comes first.
                 after_min, limit = self._driving_allowance(self.policy.pre_trip_min, on_duty=True)
-                if after_min <= 0:
+                if after_min < too_short_min:
                     self._take_required_stop(limit)
                 else:
                     self._record(Activity.PRE_TRIP, self.policy.pre_trip_min)
                 continue
 
             allowed_min, limit = self._driving_allowance()
-            if allowed_min <= 0:
+            if allowed_min < too_short_min:
                 self._take_required_stop(limit)
                 continue
 
@@ -178,7 +237,7 @@ class _Scheduler:
                     self._rest(Activity.REST, self.policy.daily_rest_min, reason)
             case StopReason.BREAK_REQUIRED:
                 after_min, limit = self._driving_allowance(self.policy.break_min)
-                if after_min <= 0:
+                if after_min < self.min_drive_min:
                     # No driving would fit after the break, so take the longer stop now.
                     self._take_required_stop(limit)
                 elif self._minutes_until_fuel() <= self.policy.fuel_merge_window_min:
@@ -365,3 +424,23 @@ class _DriveCycleOut(_Scheduler):
 
     def _restart_instead_of_rest(self) -> bool:
         return False
+
+
+class _RestartFirst(_Scheduler):
+    """D19 variant: restart before the trip starts.
+
+    With 69 of the 70 hours used, the driver would otherwise inspect the truck, drive
+    30 minutes, restart, and inspect it again.
+    """
+
+    @staticmethod
+    def worth_trying(trip: TripInput, policy: HOSPolicy) -> bool:
+        """Only when the hours left cannot cover the trip, so a restart is coming anyway."""
+        if trip.cycle_used_min == 0:
+            return False
+        cycle_left_min = policy.cycle_limit_min - trip.cycle_used_min
+        return _Scheduler(trip, policy)._cycle_needed_min() > cycle_left_min
+
+    def run(self) -> list[Event]:
+        self._rest(Activity.RESTART, self.policy.restart_min, StopReason.CYCLE_LIMIT)
+        return super().run()

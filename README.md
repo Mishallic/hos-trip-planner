@@ -95,8 +95,9 @@ choices. Code and tests cite them as D1, D2, ...
 | D15 | When a break comes due and the next fuel stop would be due within the next hour of driving, the driver fuels then instead. The fuel stop counts as the break (D9), so there is one stop, not two. |
 | D16 | The driver fuels just before a 10-hour rest or 34-hour restart when the trip needs more fuel and the tank won't last the next full shift. Only when that adds no fuel stop to the rest of the trip, and the road stop it replaces would not have doubled as the next shift's 30-minute break (D9). So it never adds a stop or lengthens the trip, and fuel still comes at or before every 1,000 miles. |
 | D17 | Log sheets use the home terminal's UTC offset at the trip start for the whole trip, so every sheet is exactly 24 hours, with no 23- or 25-hour days at a daylight-saving change. |
-| D18 | Remarks name each stop after the nearest place with at least 1,000 people, as "City, ST" (guide p. 17). When that place is more than 5 miles away the remark reads "near City, ST". The lookup is offline, so planning never waits on a geocoding service. |
-| D19 | When a 10-hour rest comes due and the 70-hour cycle can't cover the rest of the trip, the driver may take the 34-hour restart in its place: the same driving, 10 hours sooner. The planner plans the trip three ways (restart early only when keeping the hours left would not save a restart; only when one restart covers the rest; never early) and keeps the plan with the fewest restarts, then the earliest drop-off. It never takes more restarts or arrives later than restarting at every rest would. |
+| D18 | Remarks name each stop after the nearest place with at least 1,000 people, as "City, ST" (guide p. 17). When that place is more than 5 miles away the remark reads "near City, ST". The start, pickup and drop-off use the town of the place entered, so a pickup in Tucson reads "Tucson, AZ", not the nearer "South Tucson, AZ". The lookup is offline, so planning never waits on a geocoding service. |
+| D19 | When a 10-hour rest comes due and the 70-hour cycle can't cover the rest of the trip, the driver may take the 34-hour restart in its place: the same driving, 10 hours sooner. When the hours left can't cover the trip at all, the driver may also restart before starting, which saves the second pre-trip inspection a short first shift would need. The planner plans the trip each way (restart early only when keeping the hours left would not save a restart; only when one restart covers the rest; never early; before the trip) and keeps the plan with the fewest restarts, then the earliest drop-off, then the least work past 70 hours. It never takes more restarts or arrives later than restarting at every rest would. |
+| D20 | No drive shorter than 15 minutes is planned just before a rest, restart or break: the driver takes the stop where they are. Only when that costs no restart and at most 15 minutes, which it usually doesn't. A 7-minute drive followed by 34 hours off looks like a mistake on the log. |
 
 ## Architecture
 
@@ -135,6 +136,11 @@ POST /api/trips/plan
  "dropoff": {"query": "Atlanta, GA"}, "cycle_used_hours": 52,
  "start_time": "2026-10-05T07:00", "home_tz": "America/Los_Angeles"}
 ```
+
+Each plan also carries `warnings` (a ferry on the route, planned as driving) and, on
+every log sheet, `notes` that explain a sheet which looks over a limit but is not:
+more than 11 hours of driving on one calendar day (the limit runs per duty period), or
+more than 70 hours in the recap (past 70 hours the driver may work, but not drive).
 
 Errors are always JSON, `{"error": {"code", "message", "field"?, "fields"?}}`:
 400 for invalid fields, 422 when a place is not found or no road connects the stops,
@@ -176,6 +182,8 @@ npm test
 - **No post-trip inspection** is planned (D4), and the split sleeper-berth provision is
   not used (D6).
 - **US, Canada and Mexico only**, for place search and routing.
+- **Ferries are planned as driving:** the free router can't avoid them, so a plan whose
+  route crosses by ferry says so in its warnings.
 - **Free map services:** routing uses the public OSRM demo server and search uses
   Photon, both rate-limited. Results are cached, and the API throttles requests.
 - **Cache and throttle are per instance** and best effort: each serverless instance

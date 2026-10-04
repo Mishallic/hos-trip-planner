@@ -68,6 +68,7 @@ class RouteLeg:
     duration_min: float  # router estimate; the planner caps the speed (D8)
     points: tuple[tuple[float, float], ...]  # this leg's geometry, (lat, lon), decoded once
     steps: tuple[RouteStep, ...]
+    ferry_miles: float = 0.0  # crossed by ferry, which the router counts as driving
 
 
 @dataclass(frozen=True, slots=True)

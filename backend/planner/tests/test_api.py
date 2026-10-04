@@ -40,13 +40,16 @@ class FakeGeocoder:
 class FakeRouter:
     """Replays the recorded Joliet -> Chicago -> Gary route, or raises."""
 
-    def __init__(self, error=None):
+    def __init__(self, error=None, ferry_step=None):
         self.error = error
+        self.ferry_step = ferry_step  # index of a step on the second leg to make a ferry
 
     def route(self, current, pickup, dropoff):
         if self.error:
             raise self.error
         recorded = json.loads((FIXTURES / "osrm_route_ok.json").read_text(encoding="utf-8"))
+        if self.ferry_step is not None:
+            recorded["body"]["routes"][0]["legs"][1]["steps"][self.ferry_step]["mode"] = "ferry"
         transport = httpx.MockTransport(lambda request: httpx.Response(200, json=recorded["body"]))
         return OsrmRouter(make_client(transport)).route(current, pickup, dropoff)
 
@@ -127,12 +130,50 @@ class TestPlan:
         assert response.status_code == 200
         assert fake.geocoder.queries == []
         data = response.json()
-        assert set(data) == {"summary", "stops", "timeline", "route", "logs", "log_header"}
+        assert set(data) == {
+            "summary", "warnings", "stops", "timeline", "route", "logs", "log_header",
+        }  # fmt: skip
         summary = data["summary"]
         assert summary["total_miles"] == pytest.approx(74.4, abs=0.2)
         assert summary["start"] == "2026-10-05T07:00-05:00"
         assert summary["stop_counts"]["pickup"] == summary["stop_counts"]["dropoff"] == 1
         assert summary["sheets"] == 1
+
+    def test_a_road_route_has_no_warnings(self, client, use):
+        use(providers())
+
+        assert post_plan(client, plan_body()).json()["warnings"] == []
+
+    def test_a_ferry_crossing_is_reported(self, client, use):
+        use(providers(router=FakeRouter(ferry_step=9)))  # 3.3 miles
+
+        warnings = post_plan(client, plan_body()).json()["warnings"]
+
+        assert len(warnings) == 1
+        assert warnings[0].startswith("The route crosses ")
+        assert "by ferry, planned as driving" in warnings[0]
+
+    def test_the_places_entered_name_the_start_pickup_and_drop_off(self, client, use):
+        # Picked from search: a building's label still names its town on the log.
+        pickup = {"label": "Union Station, Chicago, IL", "lat": CHICAGO.lat, "lon": CHICAGO.lon}
+        use(providers())
+
+        data = post_plan(client, plan_body(pickup=pickup)).json()
+
+        stop = next(s for s in data["stops"] if s["kind"] == "pickup")
+        assert stop["place"] == "Chicago, IL"
+        assert data["summary"]["pickup"] == "Union Station, Chicago, IL"
+
+    def test_each_sheet_explains_what_looks_over_a_limit(self, client, use):
+        use(providers())
+
+        # 66 h used: the last drive ends under 70 h, and the drop-off goes past it.
+        logs = post_plan(client, plan_body(cycle_used_hours=66)).json()["logs"]
+
+        assert logs[0]["notes"] == [
+            "70:19 on duty in the cycle is within the rules: past 70 hours the driver may "
+            "still work, but not drive, until a 34-hour restart."
+        ]
 
     def test_stops_carry_place_reason_and_explanation(self, client, use):
         use(providers())

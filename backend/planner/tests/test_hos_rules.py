@@ -363,13 +363,26 @@ class TestSeventyHourCycle:
         assert first(events, "restart").start_min == 4 * H
 
     def test_cycle_running_out_during_pickup_lets_the_pickup_finish(self):
-        # D14: 68.5 h + 1 h driving reaches 70 h halfway through the pickup.
-        events = plan(1 * H, 3 * H, cycle_used_min=68 * H + 30)
+        # D14: 68.5 h + 1 h driving reaches 70 h halfway through the pickup. The second
+        # leg is long enough that restarting before the trip would end later.
+        events = plan(1 * H, 11 * H, cycle_used_min=68 * H + 30)
 
-        assert timeline(events) == [
+        assert timeline(events)[:4] == [
             ("driving", 0, 1 * H),
             ("pickup", 1 * H, 2 * H),  # finishes at 70.5 h on duty
             ("restart", 2 * H, 36 * H),  # before the next drive
+            ("driving", 36 * H, 44 * H),
+        ]
+
+    def test_work_past_seventy_is_avoided_when_it_saves_nothing(self):
+        # Same trip with a short second leg: driving and loading first, then restarting,
+        # ends at the same minute as restarting first, but with 30 min past 70 h.
+        events = plan(1 * H, 3 * H, cycle_used_min=68 * H + 30)
+
+        assert timeline(events) == [
+            ("restart", 0, 34 * H),
+            ("driving", 34 * H, 35 * H),
+            ("pickup", 35 * H, 36 * H),
             ("driving", 36 * H, 39 * H),
             ("dropoff", 39 * H, 40 * H),
         ]
@@ -383,13 +396,14 @@ class TestSeventyHourCycle:
             ("driving", 34 * H, 36 * H),
         ]
 
-    def test_starting_at_seventy_at_the_pickup_does_the_pickup_first(self):
-        # D14: the pickup is on-duty work, so it happens before the restart.
+    def test_starting_at_seventy_at_the_pickup_restarts_first(self):
+        # D14 would allow loading first, which ends at the same minute; the plan that
+        # stays within 70 hours wins the tie (D19).
         events = plan(0, 2 * H, cycle_used_min=70 * H)
 
         assert timeline(events) == [
-            ("pickup", 0, 1 * H),
-            ("restart", 1 * H, 35 * H),
+            ("restart", 0, 34 * H),
+            ("pickup", 34 * H, 35 * H),
             ("driving", 35 * H, 37 * H),
             ("dropoff", 37 * H, 38 * H),
         ]
