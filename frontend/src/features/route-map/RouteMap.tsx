@@ -87,8 +87,11 @@ export default function RouteMap({ plan, selection }: RouteMapProps) {
         const isSelected = group.key === key
         const more = hidden.reduce((count, near) => count + near.stops.length, 0)
         const title = markerTitle(group, plan.stops, more)
-        marker.options.title = title
+        marker.options.title = title // for an element Leaflet creates when the marker is added
         marker.setIcon(iconFor(group, isSelected, more))
+        // A DivIcon reuses its element and Leaflet only titles new ones: the marker's
+        // accessible name has to be updated here.
+        marker.getElement()?.setAttribute('title', title)
         marker.setZIndexOffset(zIndexFor(group, isSelected))
         marker.setTooltipContent(title)
         if (!instance.hasLayer(marker)) marker.addTo(instance)

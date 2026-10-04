@@ -72,11 +72,16 @@ export function useTripPlan() {
     writeUrl(withView(paramsFromForm(pinned), view), true)
   }, [plan, form, view, queryClient])
 
-  const submit = useCallback((next: TripForm) => {
-    const nextParams = paramsFromForm(next) // a new trip opens on the plan
-    writeUrl(nextParams)
-    setParams(nextParams)
-  }, [])
+  const submit = useCallback(
+    (next: TripForm) => {
+      const nextParams = paramsFromForm(next) // a new trip opens on the plan
+      // Without a start the trip starts now, not when it was last planned from "now".
+      if (!next.startTime) queryClient.removeQueries({ queryKey: planKey(requestFromForm(next)), exact: true })
+      writeUrl(nextParams, nextParams.toString() === readUrl().toString())
+      setParams(nextParams)
+    },
+    [queryClient],
+  )
 
   const changeView = useCallback(
     (next: View) => {

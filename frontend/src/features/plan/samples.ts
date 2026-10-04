@@ -41,6 +41,16 @@ function sample(
   }
 }
 
+/**
+ * Tomorrow at 07:00, as the form writes it: a sample starts there, so the days and
+ * stops on its card come out the same whatever the time it is tried.
+ */
+export function sampleStart(now = new Date()): string {
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T07:00`
+}
+
 /** Trips to try from the empty map: picked places, so they plan without a search. */
 export const SAMPLE_TRIPS: SampleTrip[] = [
   sample(

@@ -277,9 +277,11 @@ class FakeGeocoder:
     def __init__(self, result: list[Place] | Exception) -> None:
         self.result = result
         self.calls = 0
+        self.queries: list[str] = []
 
     def search(self, query: str, limit: int = 5) -> list[Place]:
         self.calls += 1
+        self.queries.append(query)
         if isinstance(self.result, Exception):
             raise self.result
         return self.result
@@ -305,13 +307,35 @@ class TestFallbackGeocoder:
 
         assert FallbackGeocoder(primary, fallback).search("Dallas") == self.DALLAS
 
-    def test_fallback_when_nothing_the_primary_found_fits(self):
-        # Photon answers "asdfgh" with an office called ADF&G in Alaska.
+    def test_nothing_that_fits_is_nothing_found(self):
+        # Photon answers "asdfgh" with an office called ADF&G in Alaska. That is an
+        # answer: nothing fits, and Nominatim is not asked on every typo.
         primary = FakeGeocoder([Place("ADF&G, Cold Bay, AK", 55.2, -162.7, "US")])
         fallback = FakeGeocoder([])
 
         assert FallbackGeocoder(primary, fallback).search("asdfgh") == []
-        assert fallback.calls == 1
+        assert fallback.calls == 0
+
+    def test_the_fallback_down_when_the_primary_has_nothing_is_nothing_found(self):
+        primary, fallback = FakeGeocoder([]), FakeGeocoder(UpstreamUnavailable("down"))
+
+        assert FallbackGeocoder(primary, fallback).search("Dallas") == []
+
+    def test_both_down_is_unavailable(self):
+        primary = FakeGeocoder(UpstreamUnavailable("down"))
+        fallback = FakeGeocoder(UpstreamUnavailable("down"))
+
+        with pytest.raises(UpstreamUnavailable):
+            FallbackGeocoder(primary, fallback).search("Dallas")
+
+    def test_the_fallback_gets_only_the_text_as_typed(self):
+        # Nominatim allows about one request a second: no spelling variants.
+        primary = FakeGeocoder(UpstreamUnavailable("down"))
+        fallback = FakeGeocoder([Place("Fort Worth, TX", 32.75, -97.33, "US", kind="town")])
+
+        FallbackGeocoder(primary, fallback).search("Ft Worth, TX")
+
+        assert fallback.queries == ["Ft Worth, TX"]
 
     def test_a_typo_is_searched_as_the_town_spelled_like_it(self):
         shop = Place("Pheonix, Round Rock, TX", 30.5, -97.7, "US")
@@ -405,9 +429,32 @@ class TestBestMatches:
         state = area("Texas")
         assert best_matches("Texas", [town("Texas City, TX"), state], 6)[0] == state
 
+    def test_a_code_the_list_does_not_know_ranks_but_does_not_reject(self):
+        # "DF", the old Distrito Federal, for Mexico City. A shop elsewhere in Mexico
+        # with DF in its name does not fit: "Mexico City" is not in its own name.
+        city = town("Mexico City, CMX, Mexico", region="Mexico City CMX Mexico MX")
+        shop = other(
+            "Taqueria DF, Aguascalientes, AGU, Mexico", region="Aguascalientes AGU Mexico MX"
+        )
+        # Fits ("Mexico" is in its name), but DF in a name is not where it is.
+        hostel = other("Hostel Mexico DF Airport, CMX, Mexico", region="Mexico City CMX Mexico MX")
+
+        assert best_matches("Mexico City, DF", [shop, hostel, city], 6) == [city, hostel]
+
+    def test_labels_that_differ_only_in_a_dash_are_listed_once(self):
+        found = [
+            area("Toronto—Danforth, Toronto, ON, Canada"),
+            area("Toronto–Danforth, Toronto, ON, Canada"),
+        ]
+
+        assert len(best_matches("Toronto", found, 6)) == 1
+
     def test_street_addresses_keep_the_services_order(self):
         found = [
-            other("White House, Washington, DC", address="1600 Pennsylvania Avenue Northwest"),
+            other(
+                "White House, Washington, DC",
+                address="1600 Pennsylvania Avenue Northwest Washington",  # street and town
+            ),
             area("Pennsylvania", address="1600"),
         ]
 

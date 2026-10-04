@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { mockApi, PLANS, TRIP_LINK } from './api.ts'
+import { mockApi, PLANS, TRIP_LINK, TRIP_LINK_FROM_NOW } from './api.ts'
 
 const arrival = /^Arrives /
 
@@ -13,10 +13,26 @@ test('a sample trip plans in one click and shows the arrival, the stops and the 
   await expect(page.getByRole('heading', { name: arrival })).toBeVisible()
   expect(plans).toHaveLength(1)
   expect(plans[0].postDataJSON()).toMatchObject({ cycle_used_hours: 52, current: { label: 'Los Angeles, CA' } })
+  // Tomorrow at 07:00: the days on the sample's card hold whenever it is tried.
+  expect(plans[0].postDataJSON().start_time).toMatch(/T07:00$/)
   await expect(page.getByRole('option')).toHaveCount(PLANS.restart.stops.length)
   await expect(page.getByRole('region', { name: 'Route map' })).toBeVisible()
-  // "Now" is pinned into the link, marked as such, so the link replans the same trip.
+})
+
+test('a trip planned from "now" is pinned in the link, and planning it again starts from now', async ({ page }) => {
+  const plans = await mockApi(page)
+  await page.goto(TRIP_LINK_FROM_NOW)
+  await expect(page.getByRole('heading', { name: arrival })).toBeVisible()
+  // The link replans the same trip; "now=1" marks the start as "now" for editing.
   await expect(page).toHaveURL(/start=[^&]+&now=1/)
+  const planned = plans.length
+
+  await page.getByRole('button', { name: 'Edit' }).click()
+  await expect(page.locator('input[type="datetime-local"]')).toHaveValue('') // "Empty = now"
+  await page.getByRole('button', { name: 'Plan trip' }).click()
+
+  await expect.poll(() => plans.length).toBe(planned + 1)
+  expect(plans.at(-1)?.postDataJSON().start_time).toBeUndefined()
 })
 
 test('Enter in a place field picks the top suggestion and does not plan', async ({ page }) => {
@@ -86,6 +102,16 @@ test('a place that cannot be found is reported on its field', async ({ page }) =
 
   await expect(page.getByText(message)).toBeVisible()
   await expect(page.getByRole('combobox', { name: 'Drop-off' })).toHaveAttribute('aria-invalid', 'true')
+})
+
+test('on a phone, a marker that hides stops near it says so', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'only a small map hides markers on this trip')
+  await mockApi(page)
+  await page.goto(TRIP_LINK)
+  await expect(page.locator('.route-marker').first()).toBeVisible()
+
+  // Its name, which screen readers read, and its tooltip both count what is hidden.
+  await expect(page.locator('.route-marker[title*="nearby: zoom in"]').first()).toBeAttached()
 })
 
 test('on a phone, a zoomed log sheet keeps its row labels in view', async ({ page, isMobile }) => {

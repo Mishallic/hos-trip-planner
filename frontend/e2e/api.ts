@@ -42,3 +42,6 @@ export async function mockApi(
 export const TRIP_LINK =
   '/?from=Los+Angeles%2C+CA&from_at=34.05369%2C-118.24277&pickup=Phoenix%2C+AZ&pickup_at=33.44844%2C-112.07414' +
   '&dropoff=Atlanta%2C+GA&dropoff_at=33.75447%2C-84.38982&cycle=52&start=2026-10-05T07%3A00&tz=America%2FLos_Angeles'
+
+/** The same trip without a start: it plans from now, and the app pins the start into the link. */
+export const TRIP_LINK_FROM_NOW = TRIP_LINK.replace('&start=2026-10-05T07%3A00&tz=America%2FLos_Angeles', '')

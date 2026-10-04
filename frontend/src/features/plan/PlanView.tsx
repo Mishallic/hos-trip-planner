@@ -12,7 +12,7 @@ import { StopList } from '../itinerary/StopList'
 import { TimelineStrip } from '../itinerary/TimelineStrip'
 import { ClocksCard } from '../trip-summary/ClocksCard'
 import { VerdictCard } from '../trip-summary/VerdictCard'
-import { SAMPLE_TRIPS } from './samples'
+import { SAMPLE_TRIPS, sampleStart } from './samples'
 
 // Leaflet loads in its own chunk, only once there is a route to show.
 const RouteMap = lazy(() => import('../route-map/RouteMap'))
@@ -204,7 +204,7 @@ function SampleTrips({ onSample }: { onSample: (form: TripForm) => void }) {
         {SAMPLE_TRIPS.map((sample) => (
           <li key={sample.title}>
             <ButtonBase
-              onClick={() => onSample(sample.form)}
+              onClick={() => onSample({ ...sample.form, startTime: sampleStart() })}
               sx={{
                 width: '100%',
                 justifyContent: 'space-between',

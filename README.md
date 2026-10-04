@@ -162,7 +162,7 @@ Backend (332 tests), from `backend`:
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Frontend (113 tests), from `frontend`:
+Frontend (116 tests), from `frontend`:
 
 ```powershell
 npm test
@@ -184,9 +184,10 @@ npm run e2e
 - **Frontend:** the log sheet's geometry (the duty line is continuous, covers 0-1440,
   and each row is as long as its total, including the guide's John Doe day on p. 18),
   the time scale, the shared selection, map markers, directions, the URL state.
-- **End to end:** a sample trip from the empty map, Enter in a place field, every day's
-  sheet adding to 24:00, printing every day, Back between views, a place not found,
-  and a zoomed sheet on a phone. The API is answered from recorded plans.
+- **End to end:** a sample trip from the empty map, a trip planned from "now" and
+  planned again, Enter in a place field, every day's sheet adding to 24:00, printing
+  every day, Back between views, a place not found, and on a phone the map's hidden
+  stops and a zoomed sheet. The API is answered from recorded plans.
 - **CI** (GitHub Actions) runs ruff, pytest, lint, unit tests, the type check, the
   build and the end-to-end tests on every push.
 
