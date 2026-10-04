@@ -26,9 +26,11 @@
 ## Ship
 - [x] smoke test on prod (short, multi-day, restart, bad input)
 - [x] CI
-- [ ] README
+- [x] README
 
 ## Later
-- profile the ~700ms compute stage on Vercel
-- recent trips (needs a db)
-- split sleeper berth
+- [ ] split sleeper berth (7/3 and 8/2 splits, guide p. 7-9)
+- [ ] post-trip inspection at the end of each duty period
+- [ ] shared cache and throttle (one store for all serverless instances)
+- [ ] decode the route geometry once per plan
+- [ ] recent trips (needs a db)
